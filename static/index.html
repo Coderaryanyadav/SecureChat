@@ -5,8 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SecureChat | Private & Secure Messaging</title>
-    <meta name="description"
-        content="A premium, end-to-end encrypted feel chat application built with Python and Vanilla JS.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -15,27 +13,58 @@
 
 <body>
     <div id="app">
-        <!-- Landing / Login Screen -->
-        <div id="auth-screen" class="screen">
+        <!-- User account screen -->
+        <div id="user-screen" class="screen">
             <div class="glass-card auth-card">
                 <div class="logo">
                     <div class="logo-icon">🔒</div>
                     <h1>Secure<span>Chat</span></h1>
                 </div>
-                <p class="subtitle">Experience private, real-time messaging with a premium touch.</p>
+                <p class="subtitle">Login or Register to keep your rooms.</p>
                 <div class="form-group">
-                    <label for="username">Display Name</label>
-                    <input type="text" id="username" placeholder="e.g. Satoshi" autocomplete="off">
+                    <label for="acc-user">Username</label>
+                    <input type="text" id="acc-user" placeholder="Your account name">
                 </div>
                 <div class="form-group">
-                    <label for="room-id">Chat Room ID</label>
-                    <input type="text" id="room-id" placeholder="e.g. global-hq" autocomplete="off">
+                    <label for="acc-pass">Password</label>
+                    <input type="password" id="acc-pass" placeholder="••••••••">
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button id="login-btn" class="primary-btn">Login</button>
+                    <button id="reg-btn" class="primary-btn" style="background: #4B5563;">Register</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Room setup screen -->
+        <div id="auth-screen" class="screen hidden">
+            <div class="glass-card auth-card">
+                <div class="logo">
+                    <div class="logo-icon">💬</div>
+                    <h1>Join<span>Chat</span></h1>
+                </div>
+
+                <div id="pinned-rooms" style="margin-bottom: 20px; text-align: left;">
+                    <p style="font-size: 12px; font-weight: 700; color: var(--text-dim); margin-bottom: 10px;">RECENT
+                        ROOMS</p>
+                    <div id="room-list" style="display: flex; flex-wrap: wrap; gap: 5px;"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="username">Chat Name</label>
+                    <input type="text" id="username" placeholder="Display name in room">
                 </div>
                 <div class="form-group">
-                    <label for="room-password">Room Password / Key</label>
-                    <input type="password" id="room-password" placeholder="••••••••" autocomplete="off">
+                    <label for="room-id">Room ID</label>
+                    <input type="text" id="room-id" placeholder="e.g. secret-room">
                 </div>
-                <button id="join-btn" class="primary-btn">Verify & Join Channel</button>
+                <div class="form-group">
+                    <label for="room-password">Room Password</label>
+                    <input type="password" id="room-password" placeholder="••••••••">
+                </div>
+                <button id="join-btn" class="primary-btn">Enter Room</button>
+                <button id="logout-btn"
+                    style="background: none; border: none; color: var(--text-dim); cursor: pointer; margin-top: 15px; font-size: 12px;">Logout</button>
             </div>
             <div class="bg-blobs">
                 <div class="blob blob-1"></div>
@@ -58,13 +87,12 @@
                 </header>
 
                 <main id="messages" class="message-area">
-                    <!-- Messages will appear here -->
-                    <div class="system-msg">Connecting to secure tunnel...</div>
+                    <div class="system-msg">Connecting...</div>
                 </main>
 
                 <footer class="chat-footer">
                     <form id="message-form">
-                        <input type="text" id="message-input" placeholder="Type a secure message..." autocomplete="off">
+                        <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
                         <button type="submit" id="send-btn">
                             <svg viewBox="0 0 24 24" width="24" height="24">
                                 <path fill="currentColor" d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
