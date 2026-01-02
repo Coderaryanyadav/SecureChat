@@ -13,96 +13,97 @@
 
 <body>
     <div id="app">
-        <!-- User account screen -->
         <div id="user-screen" class="screen">
             <div class="glass-card auth-card">
                 <div class="logo">
                     <div class="logo-icon">🔒</div>
                     <h1>Secure<span>Chat</span></h1>
                 </div>
-                <p class="subtitle">Login or Register to keep your rooms.</p>
+                <p class="subtitle">Secure login to your private tunnel.</p>
                 <div class="form-group">
-                    <label for="acc-user">Username</label>
-                    <input type="text" id="acc-user" placeholder="Your account name">
+                    <label>Username</label>
+                    <input type="text" id="acc-user" placeholder="Account username">
                 </div>
                 <div class="form-group">
-                    <label for="acc-pass">Password</label>
+                    <label>Password</label>
                     <input type="password" id="acc-pass" placeholder="••••••••">
                 </div>
                 <div style="display: flex; gap: 10px;">
                     <button id="login-btn" class="primary-btn">Login</button>
-                    <button id="reg-btn" class="primary-btn" style="background: #4B5563;">Register</button>
+                    <button id="reg-btn" class="primary-btn" style="background: #4b5563;">Register</button>
                 </div>
             </div>
         </div>
 
-        <!-- Room setup screen -->
         <div id="auth-screen" class="screen hidden">
             <div class="glass-card auth-card">
                 <div class="logo">
                     <div class="logo-icon">💬</div>
-                    <h1>Join<span>Chat</span></h1>
+                    <h1>Join<span>Room</span></h1>
                 </div>
-
                 <div id="pinned-rooms" style="margin-bottom: 20px; text-align: left;">
-                    <p style="font-size: 12px; font-weight: 700; color: var(--text-dim); margin-bottom: 10px;">RECENT
-                        ROOMS</p>
-                    <div id="room-list" style="display: flex; flex-wrap: wrap; gap: 5px;"></div>
+                    <p style="font-size: 10px; font-weight: 800; color: var(--text-dim); margin-bottom: 8px;">RECENT</p>
+                    <div id="room-list" style="display: flex; flex-wrap: wrap; gap: 6px;"></div>
                 </div>
-
-                <div class="form-group">
-                    <label for="username">Chat Name</label>
-                    <input type="text" id="username" placeholder="Display name in room">
-                </div>
-                <div class="form-group">
-                    <label for="room-id">Room ID</label>
-                    <input type="text" id="room-id" placeholder="e.g. secret-room">
-                </div>
-                <div class="form-group">
-                    <label for="room-password">Room Password</label>
-                    <input type="password" id="room-password" placeholder="••••••••">
-                </div>
-                <button id="join-btn" class="primary-btn">Enter Room</button>
+                <div class="form-group"><label>Display Name</label><input type="text" id="username"
+                        placeholder="Chat handle"></div>
+                <div class="form-group"><label>Room ID</label><input type="text" id="room-id"
+                        placeholder="Room identifier"></div>
+                <div class="form-group"><label>Room Key</label><input type="password" id="room-password"
+                        placeholder="Encryption key"></div>
+                <button id="join-btn" class="primary-btn">Join Secure Tunnel</button>
                 <button id="logout-btn"
-                    style="background: none; border: none; color: var(--text-dim); cursor: pointer; margin-top: 15px; font-size: 12px;">Logout</button>
-            </div>
-            <div class="bg-blobs">
-                <div class="blob blob-1"></div>
-                <div class="blob blob-2"></div>
+                    style="background:none; border:none; color:var(--text-dim); cursor:pointer; margin-top:15px; font-size:12px;">Logout</button>
             </div>
         </div>
 
-        <!-- Chat Screen -->
         <div id="chat-screen" class="screen hidden">
-            <div class="chat-container glass-card">
-                <header class="chat-header">
-                    <div class="room-info">
-                        <div class="status-indicator"></div>
-                        <h2 id="display-room">General</h2>
-                    </div>
-                    <div class="user-info">
-                        <span id="display-username">User</span>
-                        <button id="leave-btn" class="icon-btn" title="Leave Chat">✕</button>
-                    </div>
-                </header>
-
-                <main id="messages" class="message-area">
-                    <div class="system-msg">Connecting...</div>
-                </main>
-
-                <footer class="chat-footer">
-                    <form id="message-form">
-                        <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
-                        <button type="submit" id="send-btn">
-                            <svg viewBox="0 0 24 24" width="24" height="24">
-                                <path fill="currentColor" d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
-                            </svg>
-                        </button>
-                    </form>
-                </footer>
+            <div class="chat-main glass-card">
+                <aside id="sidebar" class="sidebar hidden">
+                    <h3>ONLINE</h3>
+                    <div id="user-list"></div>
+                </aside>
+                <div class="chat-container">
+                    <header class="chat-header">
+                        <div class="room-info">
+                            <button id="toggle-sidebar" class="icon-btn" style="margin-right: 10px;">☰</button>
+                            <div class="status-indicator"></div>
+                            <h2 id="display-room">Room</h2>
+                            <button id="show-qr" class="icon-btn"
+                                style="margin-left: 10px; font-size: 14px;">QR</button>
+                        </div>
+                        <div class="user-info">
+                            <span id="display-username">User</span>
+                            <button id="leave-btn" class="icon-btn">✕</button>
+                        </div>
+                    </header>
+                    <main id="messages" class="message-area"></main>
+                    <div id="typing-area"></div>
+                    <footer class="chat-footer">
+                        <div class="toolbar">
+                            <label for="img-input" class="icon-btn">📷</label>
+                            <input type="file" id="img-input" accept="image/*" style="display:none;">
+                            <button id="destruct-toggle" class="icon-btn" title="Self Destruct (30s)">⏲️</button>
+                        </div>
+                        <form id="message-form">
+                            <input type="text" id="message-input" placeholder="Secure message..." autocomplete="off">
+                            <button type="submit" id="send-btn">➤</button>
+                        </form>
+                    </footer>
+                </div>
             </div>
         </div>
     </div>
+
+    <div id="qr-modal" class="modal hidden">
+        <div class="modal-content glass-card">
+            <h3>Room Invite QR</h3>
+            <div id="qrcode"></div>
+            <button id="close-qr" class="primary-btn">Close</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="script.js"></script>
 </body>
 

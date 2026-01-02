@@ -64,12 +64,18 @@ class ChatHandler:
 
         self.active_rooms[room_id][websocket] = username
         
+        await self.broadcast_user_list(room_id)
         await self.send_to_all(room_id, {
             "type": "system",
             "content": f"{username} joined the room.",
             "timestamp": datetime.now().isoformat()
         })
         return True
+
+    async def broadcast_user_list(self, room_id):
+        if room_id in self.active_rooms:
+            users = list(self.active_rooms[room_id].values())
+            await self.send_to_all(room_id, {"type": "user_list", "users": users})
 
     def leave_room(self, websocket, room_id):
         name = None
@@ -95,7 +101,6 @@ async def register(data: dict):
     user = data.get("username")
     pwd = data.get("password")
     if not user or not pwd: return {"status": "fail", "msg": "Missing data"}
-    
     db = get_db()
     try:
         hashed = pwd_context.hash(pwd)
@@ -146,34 +151,36 @@ async def socket_endpoint(websocket: WebSocket, room_id: str, username: str, pwd
                 raw_data = await websocket.receive_text()
                 try:
                     parsed = json.loads(raw_data)
-                    msg_content = parsed.get("content", "").strip()
+                    msg_type = parsed.get("type", "message")
+                    
+                    if msg_type == "typing":
+                        await chat_manager.send_to_all(room_id, {"type": "typing", "username": username, "status": parsed.get("status")})
+                    else:
+                        msg_content = parsed.get("content", "").strip()
+                        if msg_content:
+                            msg_obj = {
+                                "type": msg_type,
+                                "username": username,
+                                "content": msg_content,
+                                "timestamp": datetime.now().isoformat(),
+                                "self_destruct": parsed.get("self_destruct", False)
+                            }
+                            chat_manager.room_messages[room_id].append(msg_obj)
+                            await chat_manager.send_to_all(room_id, msg_obj)
                 except:
-                    msg_content = raw_data.strip()
-
-                if msg_content:
-                    msg_obj = {
-                        "type": "message",
-                        "username": username,
-                        "content": msg_content,
-                        "timestamp": datetime.now().isoformat()
-                    }
-                    chat_manager.room_messages[room_id].append(msg_obj)
-                    await chat_manager.send_to_all(room_id, msg_obj)
+                    pass
         except WebSocketDisconnect:
             user = chat_manager.leave_room(websocket, room_id)
             if user:
+                await chat_manager.broadcast_user_list(room_id)
                 await chat_manager.send_to_all(room_id, {
                     "type": "delete_all",
                     "username": user,
-                    "content": f"{user} has left. Their history is purged.",
+                    "content": f"{user} left.",
                     "timestamp": datetime.now().isoformat()
                 })
         except Exception:
             chat_manager.leave_room(websocket, room_id)
-
-@app.get("/api/status")
-async def status():
-    return {"active_rooms": len(chat_manager.active_rooms)}
 
 static_folder = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
 app.mount("/", StaticFiles(directory=static_folder, html=True), name="static")
