@@ -1,30 +1,25 @@
-# SecureChat 🎓
+# 👻 GhostChat | Invisible & Secure Messaging
 
-This is a real-time messaging app that uses End-to-End Encryption (E2EE) to keep chats private. Built by **Aryan Yadav** and **Jeet Shah** for our Diploma project.
+A premium, end-to-end encrypted messaging application where messages vanish like mist. Built with a focus on absolute privacy and "Ghostly" ephemerality.
 
-## How it works?
-1. **Frontend**: HTML, CSS, and Vanilla JavaScript.
-2. **Backend**: Python (FastAPI).
-3. **Encryption**: AES-256-GCM.
-4. **Real-time**: WebSockets.
+## 🌟 Core Features
+- **Spectral Identity**: Log in with unique phantom identifiers.
+- **Invisible Encryption**: Peer-to-peer AES-GCM encryption for text and images.
+- **Vanishing Points**: Server-enforced self-destruct timers (30s).
+- **Portal History**: Securely remember past dimensions (rooms) you've visited.
+- **Ghostly UI**: A deep-void, royal lavender aesthetic with apparition animations.
 
-## Setup Instructions
-1. Install requirements:
-   ```bash
-   pip install -r requirements.txt
-   ```
-2. Run the server:
-   ```bash
-   python server/main.py
-   ```
-3. Open `http://localhost:8000` in your browser.
+## 🛠️ Tech Stack
+- **Backend**: FastAPI (Python) with WebSocket protocols.
+- **Frontend**: Vanilla JavaScript (Web Crypto API) & CSS3 (Glassmorphism).
+- **Database**: SQLite (Encrypted credentials) & Slowapi (Rate limiting).
+- **Deployment**: Optimized for Railway.app.
 
-## Project Features
-- Private Rooms with Passwords.
-- Messages are encrypted in the browser (Server cannot read them).
-- Completely Ephemeral (No messages saved on disk).
-- Modern Glassmorphism UI.
+## 🚀 Experience the Void
+1. Clone the repository.
+2. Install dependencies: `pip install -r requirements.txt`.
+3. Run the portal: `python server/main.py`.
+4. Access via `localhost:8000`.
 
-## Authors
-- Aryan Yadav
-- Jeet Shah
+---
+*Created by Aryan Yadav & Jeet Shah*

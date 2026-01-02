@@ -4,9 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SecureChat | Private & Secure Messaging</title>
+    <title>GhostChat | Invisible & Secure Messaging</title>
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#1d4ed8">
+    <meta name="theme-color" content="#a78bfa">
     <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,109 +17,94 @@
 
 <body>
     <div id="app">
-        <!-- User Account Screen (Login/Register) -->
+        <!-- Identity Screen -->
         <div id="user-screen" class="screen">
-            <div class="glass-card auth-card">
+            <div class="glass-card ghost-card auth-card">
                 <div class="logo-section">
-                    <div class="logo-icon">🛡️</div>
-                    <h1>Secure<span>Chat</span></h1>
+                    <div class="logo-icon">�</div>
+                    <h1>Ghost<span>Chat</span></h1>
                 </div>
-                <p class="subtitle">Join a safe and private messaging workspace.</p>
+                <p class="subtitle">Enter the phantom realm. Messages vanish like mist.</p>
                 <div class="form-group">
-                    <label>Account Identity</label>
-                    <input type="text" id="acc-user" placeholder="Enter your username" autocomplete="username">
+                    <label>Phantom ID</label>
+                    <input type="text" id="acc-user" placeholder="Your spectral name">
                 </div>
                 <div class="form-group">
-                    <label>Security Phrase</label>
-                    <input type="password" id="acc-pass" placeholder="••••••••" autocomplete="current-password">
+                    <label>Secret Seal</label>
+                    <input type="password" id="acc-pass" placeholder="••••••••">
                 </div>
                 <div style="display: flex; gap: 12px; margin-top: 8px;">
-                    <button id="login-btn" class="primary-btn">Sign In</button>
+                    <button id="login-btn" class="primary-btn">Manifest</button>
                     <button id="reg-btn" class="primary-btn"
-                        style="background: rgba(255,255,255,0.05); color: var(--text-main); border: 1px solid var(--glass-border);">Register</button>
+                        style="background: rgba(255,255,255,0.03); color: #fff; border: 1px solid rgba(255,255,255,0.1);">Register</button>
                 </div>
             </div>
         </div>
 
-        <!-- Room Configuration Screen -->
+        <!-- Portal Screen -->
         <div id="auth-screen" class="screen hidden">
-            <div class="glass-card auth-card">
+            <div class="glass-card ghost-card auth-card">
                 <div class="logo-section">
-                    <div class="logo-icon">🔑</div>
-                    <h1>Access<span>Vault</span></h1>
+                    <div class="logo-icon">�</div>
+                    <h1>Spectral<span>Portal</span></h1>
                 </div>
                 <div id="pinned-rooms" style="margin-bottom: 24px; text-align: left;">
                     <p
-                        style="font-size: 10px; font-weight: 800; color: var(--text-dim); margin-bottom: 12px; letter-spacing: 1px;">
-                        PREVIOUS CHANNELS</p>
+                        style="font-size: 10px; font-weight: 800; color: #a78bfa; margin-bottom: 12px; letter-spacing: 2px;">
+                        PAST ECHOES</p>
                     <div id="room-list" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
                 </div>
-                <div class="form-group"><label>Display Alias</label><input type="text" id="username"
-                        placeholder="How others see you"></div>
-                <div class="form-group"><label>Channel ID</label><input type="text" id="room-id"
-                        placeholder="Workspace identifier"></div>
-                <div class="form-group"><label>Channel Key</label><input type="password" id="room-password"
-                        placeholder="Passphrase for this room"></div>
-                <button id="join-btn" class="primary-btn">Establish Tunnel</button>
+                <div class="form-group"><label>Alias</label><input type="text" id="username" placeholder="Room handle">
+                </div>
+                <div class="form-group"><label>Room Code</label><input type="text" id="room-id"
+                        placeholder="Dimension key"></div>
+                <div class="form-group"><label>Encryption</label><input type="password" id="room-password"
+                        placeholder="Passphrase"></div>
+                <button id="join-btn" class="primary-btn">Enter Dimension</button>
                 <button id="logout-btn"
-                    style="background:none; border:none; color:var(--text-dim); cursor:pointer; margin-top:20px; font-size:12px; font-weight: 600; text-decoration: underline;">Switch
-                    Account</button>
+                    style="background:none; border:none; color:rgba(255,255,255,0.4); cursor:pointer; margin-top:20px; font-size:12px; font-weight: 600; text-decoration: underline;">Vanish
+                    from here</button>
             </div>
         </div>
 
-        <!-- Main Workspace Interface -->
+        <!-- Ghost Workspace -->
         <div id="chat-screen" class="screen hidden">
-            <div class="chat-main glass-card">
+            <div class="chat-main glass-card ghost-workspace">
                 <aside id="sidebar" class="sidebar hidden">
-                    <h3>MEMBERS</h3>
+                    <h3>PHANTOMS</h3>
                     <div id="user-list"></div>
                 </aside>
                 <div class="chat-container">
                     <header class="chat-header">
                         <div class="room-info">
-                            <button id="toggle-sidebar" class="icon-btn" title="Toggle Member List">👥</button>
+                            <button id="toggle-sidebar" class="icon-btn">�</button>
                             <div class="status-indicator"></div>
-                            <h2 id="display-room">Lobby</h2>
-                            <button id="show-qr" class="icon-btn" style="margin-left: 12px;"
-                                title="Get Room QR">📱</button>
+                            <h2 id="display-room">Void</h2>
+                            <button id="show-qr" class="icon-btn" style="margin-left: 12px;">�</button>
                         </div>
                         <div class="user-info">
-                            <span id="display-username">Ghost</span>
-                            <button id="leave-btn" class="icon-btn" style="color: #f87171;"
-                                title="Terminate Session">✕</button>
+                            <span id="display-username">Incognito</span>
+                            <button id="leave-btn" class="icon-btn" style="color: #6366f1;">✕</button>
                         </div>
                     </header>
                     <main id="messages" class="message-area"></main>
                     <div id="typing-area"></div>
                     <footer class="chat-footer">
                         <div class="toolbar">
-                            <label for="img-input" class="icon-btn" title="Send Encrypted Image">📷</label>
+                            <label for="img-input" class="icon-btn">�️</label>
                             <input type="file" id="img-input" accept="image/*" style="display:none;">
-                            <button id="destruct-toggle" class="icon-btn" title="Auto-Purge (30s Active)">⏲️</button>
+                            <button id="destruct-toggle" class="icon-btn">⏳</button>
                         </div>
                         <form id="message-form">
-                            <input type="text" id="message-input" placeholder="Compose encrypted transmission..."
+                            <input type="text" id="message-input" placeholder="Whisper to the void..."
                                 autocomplete="off">
-                            <button type="submit" id="send-btn">⮞</button>
+                            <button type="submit" id="send-btn">✦</button>
                         </form>
                     </footer>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- QR Modal Overlay -->
-    <div id="qr-modal" class="modal hidden">
-        <div class="modal-content glass-card">
-            <h3>Invite Members</h3>
-            <p style="font-size: 13px; color: var(--text-dim); margin-top: 8px;">Scan to join the secure workspace
-                instantly.</p>
-            <div id="qrcode"></div>
-            <button id="close-qr" class="primary-btn">Dismiss</button>
-        </div>
-    </div>
-
-    <!-- Dependencies -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="script.js"></script>
 </body>

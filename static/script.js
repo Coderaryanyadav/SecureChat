@@ -111,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else {
                         addMsg(data.username, new TextDecoder().decode(dec), 'message', data.self_destruct, data.id);
                     }
-                    notify(`Secure Transmission`, `${data.username} sent a file/message`);
+                    notify(`Ghostly Message`, `${data.username} sent something...`);
                 }
             } else if (data.type === 'delete_all') {
                 document.querySelectorAll(`.author-${data.username}`).forEach(el => el.remove());
