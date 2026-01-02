@@ -1,6 +1,6 @@
 # ==========================================================
 # SecureChat - Final Year Diploma Project
-# Created by: Aryan Yadav
+# Created by: Aryan Yadav and Jeet Shah
 # ==========================================================
 
 import json
