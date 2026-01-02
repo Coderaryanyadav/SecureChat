@@ -1,23 +1,30 @@
-# SecureChat: E2EE Private Messaging
+# SecureChat - Final Year Project 🎓
 
-A premium, state-of-the-art secure chat application built with **FastAPI (Python)** and **Vanilla JS**.
+This is a real-time messaging app that uses End-to-End Encryption (E2EE) to keep chats private. Built by **Aryan Yadav** and **Jeet Shah** for our Diploma project.
 
-## 🛡️ Security Features
-- **Project-Level E2EE**: AES-256-GCM encryption performed entirely in the browser.
-- **Room Verification**: Every room is protected by a unique password. If a room doesn't exist, it's created with the password provided by the first user.
-- **Blind Relay**: The server never sees plaintext messages; it only handles encrypted blobs.
-- **Ephemeral Logic**: Messages are not stored on the server disk or database.
+## How it works?
+1. **Frontend**: HTML, CSS, and Vanilla JavaScript.
+2. **Backend**: Python (FastAPI).
+3. **Encryption**: AES-256-GCM.
+4. **Real-time**: WebSockets.
 
-## ✨ Premium UI
-- **Glassmorphic Design**: Modern acrylic effects and blur.
-- **Responsive Animations**: Smooth transitions and hover effects.
-- **Brutal Audit Approved**: Hardened against XSS and spoofing.
+## Setup Instructions
+1. Install requirements:
+   ```bash
+   pip install -r requirements.txt
+   ```
+2. Run the server:
+   ```bash
+   python server/main.py
+   ```
+3. Open `http://localhost:8000` in your browser.
 
-## 🚀 Quick Start
-1. Install dependencies: `pip install -r requirements.txt`
-2. Run the application: `./run.sh`
-3. Access: `http://localhost:8000`
+## Project Features
+- Private Rooms with Passwords.
+- Messages are encrypted in the browser (Server cannot read them).
+- Completely Ephemeral (No messages saved on disk).
+- Modern Glassmorphism UI.
 
-## 🛠 Tech Stack
-- **Backend**: Python 3.10+, FastAPI, Uvicorn (standard).
-- **Frontend**: HTML5, CSS3 (Vanilla), JS (Web Crypto API).
+## Authors
+- Aryan Yadav
+- Jeet Shah

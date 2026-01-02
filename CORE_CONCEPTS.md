@@ -1,36 +1,27 @@
-# Project Core Concepts: How it Works? 🚀
+# Study Guide - How the Project Works?
 
-This guide explains the "Magic" behind SecureChat so you can explain it to anyone (or your external examiner).
+This guide is for us to prepare for the viva or presentation.
 
-## 1. Real-Time Communication (WebSockets)
-**Concept:** Normally, the web works like this: you ask for a page, the server gives it to you, and the connection closes (HTTP).
-**In this project:** We use **WebSockets (WS)**. It's like a phone call that stays open.
-- The browser and server stay connected.
-- When you type a message, it’s sent *instantly* through the "open pipe."
-- No need to refresh the page to see new messages.
+### 1. WebSockets (The Connection)
+In normal websites, you request and the server responds. But for a chat, we need a "Live" connection. WebSockets keep the line open between the browser and server so messages can go back and forth instantly.
 
-## 2. End-to-End Encryption (E2EE)
-**Concept:** This is the most important part. "End-to-End" means only the people at the ends of the conversation (you and your friend) can read it.
-**How we did it:**
-- When you join a room, your browser takes the **Room Password** and turns it into a secret "Encryption Key" using an algorithm called **SHA-256**.
-- **The Encryption:** Every message you send is scrambled using **AES-256-GCM** (the same standard the government uses).
-- **The Scrambled Text:** The server only sees random gibberish like `vGk2/9...`. 
-- **The Decryption:** Your friend’s browser has the same password, so it can unscramble the gibberish back into a normal message.
+### 2. E2EE (Privacy)
+"End-to-End Encryption" means the message is locked at my side and only unlocked at your side. 
+- We use the **Web Crypto API** in JavaScript.
+- We derive a **256-bit key** from the room password.
+- We use **AES-GCM** to scramble the text.
+- The server only sees random code (binary/base64).
 
-## 3. The "Blind" Server
-**Concept:** We designed the server to be "blind."
-- The server (FastAPI) acts like a postman who is forbidden from opening the letters.
-- It doesn't save messages to a database.
-- It doesn't know the room password (it only uses it to verify if you can join, but never for decryption).
-- If the server is hacked, the hacker finds **zero** chat history.
+### 3. FastAPI (The Backend)
+We chose FastAPI because it is very fast and handles WebSockets easily. It broadcasts messages to everyone in the room.
 
-## 4. Room Creation & Verification
-- **Creation:** The first person to enter a room ID (e.g., `jeet-secret`) sets the password for that room.
-- **Verification:** The server saves that password in its memory. Anyone else trying to join `jeet-secret` must provide that exact password.
-- **Privacy:** This makes sure only people who know the "secret handshake" (password) can enter the room.
+### 4. Security Highlights:
+- **No Database**: We don't save any chat history. Once you close the tab, the chat is gone forever (highly secure).
+- **Password Rooms**: Each room has its own password. Access is only for those who know it.
+- **Sanitization**: We escape HTML to prevent XSS (Cross Site Scripting) attacks.
 
-## 5. Security Terms to Remember:
-1. **AES-GCM:** The "lock" we use for messages.
-2. **WebSocket:** The "tunnel" the messages travel through.
-3. **FastAPI:** The "engine" running the server.
-4. **SubtleCrypto:** The "security expert" built into your browser that does the heavy math.
+### Important Keywords to Remember:
+1. **AES-256-GCM**: Advanced Encryption Standard.
+2. **SHA-256**: Secure Hash Algorithm (used to make the key).
+3. **WSS**: WebSocket Secure (Encrypted tunnel).
+4. **FastAPI**: Modern Python web framework.

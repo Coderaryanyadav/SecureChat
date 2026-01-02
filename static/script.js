@@ -1,225 +1,193 @@
+// SecureChat - Script
+// Managed by Aryan and Jeet
+
 document.addEventListener('DOMContentLoaded', () => {
-    const authScreen = document.getElementById('auth-screen');
-    const chatScreen = document.getElementById('chat-screen');
-    const usernameInput = document.getElementById('username');
-    const roomIdInput = document.getElementById('room-id');
+    // Get all UI elements
+    const loginDiv = document.getElementById('auth-screen');
+    const chatDiv = document.getElementById('chat-screen');
+    const nameInput = document.getElementById('username');
+    const roomInput = document.getElementById('room-id');
+    const passInput = document.getElementById('room-password');
     const joinBtn = document.getElementById('join-btn');
     const leaveBtn = document.getElementById('leave-btn');
-    const messageForm = document.getElementById('message-form');
-    const messageInput = document.getElementById('message-input');
-    const messageArea = document.getElementById('messages');
-    const displayRoom = document.getElementById('display-room');
-    const displayUsername = document.getElementById('display-username');
+    const form = document.getElementById('message-form');
+    const input = document.getElementById('message-input');
+    const chatArea = document.getElementById('messages');
+    const roomLabel = document.getElementById('display-room');
+    const userLabel = document.getElementById('display-username');
 
-    let socket = null;
-    let currentUsername = '';
-    let currentRoom = '';
-    let cryptoKey = null;
+    let ws = null;
+    let myName = '';
+    let myRoom = '';
+    let myKey = null;
 
-    // Derived key from room ID for simple E2EE demo
-    const deriveKey = async (password) => {
+    // --- ENCRYPTION FUNCTIONS ---
+
+    // Generate key from password
+    async function makeKey(pwd) {
         const encoder = new TextEncoder();
-        const data = encoder.encode(password);
+        const data = encoder.encode(pwd);
         const hash = await crypto.subtle.digest('SHA-256', data);
         return await crypto.subtle.importKey(
-            'raw',
-            hash,
-            { name: 'AES-GCM' },
-            false,
-            ['encrypt', 'decrypt']
+            'raw', hash, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']
         );
-    };
+    }
 
-    const encryptMessage = async (text) => {
-        if (!cryptoKey) return text;
+    // Encrypt the message
+    async function encryptMsg(text) {
+        if (!myKey) return text;
         const encoder = new TextEncoder();
         const iv = crypto.getRandomValues(new Uint8Array(12));
         const encrypted = await crypto.subtle.encrypt(
-            { name: 'AES-GCM', iv },
-            cryptoKey,
-            encoder.encode(text)
+            { name: 'AES-GCM', iv }, myKey, encoder.encode(text)
         );
-
-        // Return as base64 combined with IV
         const combined = new Uint8Array(iv.length + encrypted.byteLength);
         combined.set(iv);
         combined.set(new Uint8Array(encrypted), iv.length);
         return btoa(String.fromCharCode(...combined));
-    };
+    }
 
-    const decryptMessage = async (base64) => {
-        if (!cryptoKey) return base64;
+    // Decrypt the message
+    async function decryptMsg(b64) {
+        if (!myKey) return b64;
         try {
-            const combined = new Uint8Array(atob(base64).split("").map(c => c.charCodeAt(0)));
+            const combined = new Uint8Array(atob(b64).split("").map(c => c.charCodeAt(0)));
             const iv = combined.slice(0, 12);
             const data = combined.slice(12);
-            const decrypted = await crypto.subtle.decrypt(
-                { name: 'AES-GCM', iv },
-                cryptoKey,
-                data
-            );
-            return new TextDecoder().decode(decrypted);
-        } catch (e) {
-            console.error("Decryption failed", e);
-            return "[Encrypted Message - Decryption Failed]";
+            const dec = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, myKey, data);
+            return new TextDecoder().decode(dec);
+        } catch (err) {
+            console.log("Error decrypting:", err);
+            return "[This message is encrypted and you don't have the key]";
         }
-    };
+    }
 
-    const connect = async () => {
-        const username = usernameInput.value.trim();
-        const roomId = roomIdInput.value.trim() || 'general';
-        const roomPassword = document.getElementById('room-password').value.trim();
+    // --- CHAT LOGIC ---
 
-        if (!username || !roomPassword) {
-            alert('Please enter a display name and room password');
+    async function startChat() {
+        const name = nameInput.value.trim();
+        const room = roomInput.value.trim() || 'home';
+        const pass = passInput.value.trim();
+
+        if (name === "" || pass === "") {
+            alert("Please fill your name and room password!");
             return;
         }
 
         joinBtn.disabled = true;
-        joinBtn.textContent = 'Verifying Room...';
+        joinBtn.innerText = "Connecting...";
 
         try {
-            // 1. Verify or create room with password
-            const verifyResp = await fetch('/api/verify-room', {
+            // Check room status first
+            const resp = await fetch('/api/verify-room', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ room_id: roomId, password: roomPassword })
+                body: JSON.stringify({ room_id: room, password: pass })
             });
-            const verifyData = await verifyResp.json();
+            const result = await resp.json();
 
-            if (!verifyData.success) {
-                alert(verifyData.message);
+            if (result.status === "fail") {
+                alert(result.msg);
                 joinBtn.disabled = false;
-                joinBtn.textContent = 'Verify & Join Channel';
+                joinBtn.innerText = "Verify & Join Channel";
                 return;
             }
 
-            // 2. Use password + room ID for E2EE key
-            cryptoKey = await deriveKey(roomPassword + roomId);
+            // Prepare encryption
+            myKey = await makeKey(pass + room);
+            myName = name;
+            myRoom = room;
 
-            currentUsername = username;
-            currentRoom = roomId;
+            // Connect WebSocket
+            const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const url = `${protocol}//${location.host}/ws/${room}/${name}?pwd=${encodeURIComponent(pass)}`;
 
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            // Send password as a query parameter for verification in the WebSocket upgrade
-            const wsUrl = `${protocol}//${window.location.host}/ws/${roomId}/${username}?pwd=${encodeURIComponent(roomPassword)}`;
+            ws = new WebSocket(url);
 
-            socket = new WebSocket(wsUrl);
-
-            socket.onopen = () => {
-                console.log('Connected to SecureChat server');
-                authScreen.classList.add('hidden');
-                chatScreen.classList.remove('hidden');
-                displayRoom.textContent = roomId;
-                displayUsername.textContent = username;
-
-                messageArea.innerHTML = '';
-                addSystemMessage('E2EE Verified Tunnel Established');
+            ws.onopen = () => {
+                loginDiv.classList.add('hidden');
+                chatDiv.classList.remove('hidden');
+                roomLabel.innerText = room;
+                userLabel.innerText = name;
+                chatArea.innerHTML = '';
+                addSystemMsg("Safe Tunnel Created!");
             };
 
-            socket.onmessage = async (event) => {
-                const data = JSON.parse(event.data);
-                await handleMessage(data);
+            ws.onmessage = async (e) => {
+                const data = JSON.parse(e.data);
+                if (data.type === 'system') {
+                    addSystemMsg(data.content);
+                } else if (data.type === 'message') {
+                    const isMe = data.username === myName;
+                    const text = await decryptMsg(data.content);
+                    addBubble(data.username, text, data.timestamp, isMe);
+                } else if (data.type === 'error') {
+                    alert("ERROR: " + data.message);
+                }
             };
 
-            socket.onclose = (event) => {
-                console.log('Disconnected from server', event);
-                addSystemMessage('Secure tunnel closed');
-                joinBtn.disabled = false;
-                joinBtn.textContent = 'Verify & Join Channel';
-
+            ws.onclose = () => {
+                addSystemMsg("Disconnected.");
                 setTimeout(() => {
-                    if (socket && socket.readyState === WebSocket.CLOSED) {
-                        authScreen.classList.remove('hidden');
-                        chatScreen.classList.add('hidden');
-                        socket = null;
-                    }
-                }, 2000);
+                    location.reload(); // Go back to login
+                }, 1500);
             };
 
-            socket.onerror = (error) => {
-                console.error('WebSocket Error:', error);
-                addSystemMessage('Handshake Failed');
-                joinBtn.disabled = false;
-                joinBtn.textContent = 'Retry Connection';
-            };
-        } catch (err) {
-            console.error(err);
-            alert('Server error during verification');
+        } catch (e) {
+            console.log(e);
+            alert("Connection Failed!");
             joinBtn.disabled = false;
-            joinBtn.textContent = 'Verify & Join Channel';
         }
-    };
+    }
 
-    const handleMessage = async (data) => {
-        if (data.type === 'system') {
-            addSystemMessage(data.content);
-        } else if (data.type === 'message') {
-            const isMe = data.username === currentUsername;
-            const decryptedContent = await decryptMessage(data.content);
-            addChatMessage(data.username, decryptedContent, data.timestamp, isMe);
-        } else if (data.type === 'error') {
-            addSystemMessage(`SERVER ERROR: ${data.message}`);
-        }
-    };
+    function addSystemMsg(txt) {
+        const d = document.createElement('div');
+        d.className = 'system-msg';
+        d.innerText = txt;
+        chatArea.appendChild(d);
+        chatArea.scrollTop = chatArea.scrollHeight;
+    }
 
-    const addSystemMessage = (text) => {
-        const div = document.createElement('div');
-        div.className = 'system-msg';
-        div.textContent = text;
-        messageArea.appendChild(div);
-        scrollToBottom();
-    };
+    function addBubble(user, msg, time, isMe) {
+        const d = document.createElement('div');
+        d.className = `message ${isMe ? 'my-msg' : 'other-msg'}`;
 
-    const addChatMessage = (user, content, timestamp, isMe) => {
-        const div = document.createElement('div');
-        div.className = `message ${isMe ? 'my-msg' : 'other-msg'}`;
+        const showTime = new Date(time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-        const time = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-        div.innerHTML = `
+        d.innerHTML = `
             ${isMe ? '' : `<div class="msg-header">${user}</div>`}
-            <div class="msg-content">${escapeHTML(content)}</div>
-            <div class="msg-time">${time}</div>
+            <div class="msg-content">${escape(msg)}</div>
+            <div class="msg-time">${showTime}</div>
         `;
+        chatArea.appendChild(d);
+        chatArea.scrollTop = chatArea.scrollHeight;
+    }
 
-        messageArea.appendChild(div);
-        scrollToBottom();
-    };
-
-    const scrollToBottom = () => {
-        messageArea.scrollTop = messageArea.scrollHeight;
-    };
-
-    const escapeHTML = (str) => {
+    function escape(str) {
         const p = document.createElement('p');
-        p.textContent = str;
+        p.innerText = str;
         return p.innerHTML;
-    };
+    }
 
-    const sendMessage = async (e) => {
-        if (e) e.preventDefault();
-        const content = messageInput.value.trim();
-        if (content && socket && socket.readyState === WebSocket.OPEN) {
-            const encryptedContent = await encryptMessage(content);
-            socket.send(JSON.stringify({ content: encryptedContent }));
-            messageInput.value = '';
+    // Event Listeners
+    joinBtn.onclick = startChat;
+
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        const msg = input.value.trim();
+        if (msg && ws && ws.readyState === WebSocket.OPEN) {
+            const secret = await encryptMsg(msg);
+            ws.send(JSON.stringify({ content: secret }));
+            input.value = '';
         }
     };
 
-    joinBtn.addEventListener('click', connect);
-    messageForm.addEventListener('submit', sendMessage);
+    leaveBtn.onclick = () => {
+        if (ws) ws.close();
+    };
 
-    leaveBtn.addEventListener('click', () => {
-        if (socket) {
-            socket.close();
-        }
-    });
-
-    // Enter key support for login fields
-    [usernameInput, roomIdInput].forEach(input => {
-        input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') connect();
-        });
+    // Quick enter key support
+    [nameInput, roomInput, passInput].forEach(el => {
+        el.onkeypress = (e) => { if (e.key === 'Enter') startChat(); };
     });
 });
