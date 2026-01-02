@@ -1,6 +1,8 @@
 import json
 import os
 import sqlite3
+import asyncio
+import uuid
 from datetime import datetime
 from typing import Dict, List
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -36,7 +38,6 @@ class ChatHandler:
     def __init__(self):
         self.active_rooms = {}
         self.room_passwords = {}
-        self.room_messages = {}
 
     def check_room(self, room_id, password):
         if room_id not in self.room_passwords:
@@ -55,7 +56,6 @@ class ChatHandler:
         
         if room_id not in self.active_rooms:
             self.active_rooms[room_id] = {}
-            self.room_messages[room_id] = []
         
         if any(name == username for name in self.active_rooms[room_id].values()):
             await websocket.send_json({"type": "error", "message": "This name is already used!"})
@@ -67,7 +67,7 @@ class ChatHandler:
         await self.broadcast_user_list(room_id)
         await self.send_to_all(room_id, {
             "type": "system",
-            "content": f"{username} joined the room.",
+            "content": f"{username} joined the secure tunnel.",
             "timestamp": datetime.now().isoformat()
         })
         return True
@@ -82,8 +82,6 @@ class ChatHandler:
         if room_id in self.active_rooms:
             if websocket in self.active_rooms[room_id]:
                 name = self.active_rooms[room_id].pop(websocket)
-                if room_id in self.room_messages:
-                    self.room_messages[room_id] = [m for m in self.room_messages[room_id] if m['username'] != name]
         return name
 
     async def send_to_all(self, room_id, data):
@@ -143,6 +141,10 @@ async def verify(data: dict):
         return {"status": "ok"}
     return {"status": "fail", "msg": "Incorrect password for this room."}
 
+async def schedule_destruct(room_id, msg_id):
+    await asyncio.sleep(30)
+    await chat_manager.send_to_all(room_id, {"type": "delete_msg", "id": msg_id})
+
 @app.websocket("/ws/{room_id}/{username}")
 async def socket_endpoint(websocket: WebSocket, room_id: str, username: str, pwd: str = ""):
     if await chat_manager.join_room(websocket, room_id, username, pwd):
@@ -151,22 +153,24 @@ async def socket_endpoint(websocket: WebSocket, room_id: str, username: str, pwd
                 raw_data = await websocket.receive_text()
                 try:
                     parsed = json.loads(raw_data)
-                    msg_type = parsed.get("type", "message")
+                    m_type = parsed.get("type", "message")
                     
-                    if msg_type == "typing":
+                    if m_type == "typing":
                         await chat_manager.send_to_all(room_id, {"type": "typing", "username": username, "status": parsed.get("status")})
                     else:
-                        msg_content = parsed.get("content", "").strip()
-                        if msg_content:
-                            msg_obj = {
-                                "type": msg_type,
-                                "username": username,
-                                "content": msg_content,
-                                "timestamp": datetime.now().isoformat(),
-                                "self_destruct": parsed.get("self_destruct", False)
-                            }
-                            chat_manager.room_messages[room_id].append(msg_obj)
-                            await chat_manager.send_to_all(room_id, msg_obj)
+                        msg_id = str(uuid.uuid4())
+                        msg_obj = {
+                            "type": m_type,
+                            "id": msg_id,
+                            "username": username,
+                            "content": parsed.get("content", ""),
+                            "timestamp": datetime.now().isoformat(),
+                            "self_destruct": parsed.get("self_destruct", False)
+                        }
+                        await chat_manager.send_to_all(room_id, msg_obj)
+                        
+                        if parsed.get("self_destruct"):
+                            asyncio.create_task(schedule_destruct(room_id, msg_id))
                 except:
                     pass
         except WebSocketDisconnect:

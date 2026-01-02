@@ -9,10 +9,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const qrModal = document.getElementById('qr-modal'), showQr = document.getElementById('show-qr'), closeQr = document.getElementById('close-qr'), qrcodeDiv = document.getElementById('qrcode');
     const imgInput = document.getElementById('img-input'), destructToggle = document.getElementById('destruct-toggle');
 
-    let ws = null, myName = '', myRoom = '', myKey = null, currentUserId = null, isDestruct = false, typingTimeout = null;
+    let ws = null, myName = '', myRoom = '', myKey = null, currentUserId = null, isDestruct = false, typingTimeout = null, lastTypingSent = 0;
 
     if (Notification.permission !== "granted") Notification.requestPermission();
     function notify(title, body) { if (Notification.permission === "granted" && document.hidden) new Notification(title, { body }); }
+
+    function arrayBufferToBase64(buffer) {
+        let binary = '';
+        const bytes = new Uint8Array(buffer);
+        for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+        return btoa(binary);
+    }
+
+    function base64ToArrayBuffer(base64) {
+        const binary_string = atob(base64);
+        const len = binary_string.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) bytes[i] = binary_string.charCodeAt(i);
+        return bytes.buffer;
+    }
 
     async function makeKey(pwd) {
         const encoder = new TextEncoder(), data = encoder.encode(pwd);
@@ -25,15 +40,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, myKey, data);
         const combined = new Uint8Array(iv.length + encrypted.byteLength);
         combined.set(iv); combined.set(new Uint8Array(encrypted), iv.length);
-        return btoa(String.fromCharCode(...combined));
+        return arrayBufferToBase64(combined.buffer);
     }
 
     async function decryptData(b64) {
         try {
-            const combined = new Uint8Array(atob(b64).split("").map(c => c.charCodeAt(0)));
+            const combined = new Uint8Array(base64ToArrayBuffer(b64));
             const iv = combined.slice(0, 12), data = combined.slice(12);
-            const dec = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, myKey, data);
-            return dec;
+            return await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, myKey, data);
         } catch (e) { return null; }
     }
 
@@ -53,9 +67,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadHistory() {
         if (!currentUserId) return;
-        const res = await (await fetch(`/api/history/${currentUserId}`)).json();
+        const list = await (await fetch(`/api/history/${currentUserId}`)).json();
         roomList.innerHTML = '';
-        res.forEach(rid => {
+        list.forEach(rid => {
             const span = document.createElement('span'); span.className = 'room-tag'; span.innerText = rid;
             span.onclick = () => { roomInput.value = rid; }; roomList.appendChild(span);
         });
@@ -77,45 +91,52 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = JSON.parse(e.data);
             if (data.type === 'user_list') {
                 userListDiv.innerHTML = data.users.map(u => `<div class="user-item">${u}</div>`).join('');
+                document.querySelectorAll('.message').forEach(m => {
+                    const author = m.getAttribute('data-author');
+                    if (author && author !== myName && !data.users.includes(author)) m.remove();
+                });
             } else if (data.type === 'typing') {
                 typingArea.innerHTML = data.status ? `${data.username} is typing<span class="typing-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>` : '';
             } else if (data.type === 'system') {
                 addMsg(null, data.content, 'system');
+            } else if (data.type === 'delete_msg') {
+                const el = document.getElementById(`msg-${data.id}`);
+                if (el) el.remove();
             } else if (data.type === 'message' || data.type === 'image') {
                 const dec = await decryptData(data.content);
                 if (dec) {
                     if (data.type === 'image') {
                         const blob = new Blob([dec]), url = URL.createObjectURL(blob);
-                        addImage(data.username, url, data.self_destruct);
+                        addImage(data.username, url, data.self_destruct, data.id);
                     } else {
-                        addMsg(data.username, new TextDecoder().decode(dec), 'message', data.self_destruct);
+                        addMsg(data.username, new TextDecoder().decode(dec), 'message', data.self_destruct, data.id);
                     }
-                    notify(`Message in ${myRoom}`, `${data.username} sent a ${data.type}`);
+                    notify(`Secure Transmission`, `${data.username} sent a file/message`);
                 }
             } else if (data.type === 'delete_all') {
-                document.querySelectorAll(`.msg-${data.username}`).forEach(el => el.remove());
+                document.querySelectorAll(`.author-${data.username}`).forEach(el => el.remove());
                 addMsg(null, data.content, 'system');
             }
         };
         ws.onclose = () => location.reload();
     };
 
-    function addMsg(user, txt, type, destruct) {
+    function addMsg(user, txt, type, destruct, id) {
         const d = document.createElement('div'), isMe = user === myName;
         if (type === 'system') { d.className = 'system-msg'; d.innerText = txt; }
         else {
-            d.className = `message ${isMe ? 'my-msg' : 'other-msg'} msg-${user} ${destruct ? 'destructing' : ''}`;
+            d.id = `msg-${id}`; d.setAttribute('data-author', user);
+            d.className = `message ${isMe ? 'my-msg' : 'other-msg'} author-${user} ${destruct ? 'destructing' : ''}`;
             d.innerHTML = `${isMe ? '' : `<div class='msg-header'>${user}</div>`}<div class='msg-content'>${txt}</div>${destruct ? '<div class="self-destruct-timer">⏲️ Purging in 30s...</div>' : ''}`;
-            if (destruct) setTimeout(() => d.remove(), 30000);
         }
         chatArea.appendChild(d); chatArea.scrollTop = chatArea.scrollHeight;
     }
 
-    function addImage(user, url, destruct) {
+    function addImage(user, url, destruct, id) {
         const d = document.createElement('div'), isMe = user === myName;
-        d.className = `message ${isMe ? 'my-msg' : 'other-msg'} msg-${user} ${destruct ? 'destructing' : ''}`;
+        d.id = `msg-${id}`; d.setAttribute('data-author', user);
+        d.className = `message ${isMe ? 'my-msg' : 'other-msg'} author-${user} ${destruct ? 'destructing' : ''}`;
         d.innerHTML = `${isMe ? '' : `<div class='msg-header'>${user}</div>`}<img src="${url}" class="img-msg" onclick="window.open('${url}')">${destruct ? '<div class="self-destruct-timer">⏲️ Purging in 30s...</div>' : ''}`;
-        if (destruct) setTimeout(() => d.remove(), 30000);
         chatArea.appendChild(d); chatArea.scrollTop = chatArea.scrollHeight;
     }
 
@@ -131,9 +152,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     input.oninput = () => {
         if (ws?.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify({ type: 'typing', status: true }));
+            const now = Date.now();
+            if (now - lastTypingSent > 1000) {
+                ws.send(JSON.stringify({ type: 'typing', status: true }));
+                lastTypingSent = now;
+            }
             clearTimeout(typingTimeout);
-            typingTimeout = setTimeout(() => ws.send(JSON.stringify({ type: 'typing', status: false })), 2000);
+            typingTimeout = setTimeout(() => {
+                ws.send(JSON.stringify({ type: 'typing', status: false }));
+                lastTypingSent = 0;
+            }, 2000);
         }
     };
 
@@ -153,8 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
     toggleSidebar.onclick = () => sidebar.classList.toggle('hidden');
     showQr.onclick = () => {
         qrcodeDiv.innerHTML = '';
-        const link = `${location.origin}/?room=${myRoom}`;
-        new QRCode(qrcodeDiv, { text: link, width: 150, height: 150 });
+        new QRCode(qrcodeDiv, { text: `${location.origin}/?room=${myRoom}`, width: 150, height: 150 });
         qrModal.classList.remove('hidden');
     };
     closeQr.onclick = () => qrModal.classList.add('hidden');
