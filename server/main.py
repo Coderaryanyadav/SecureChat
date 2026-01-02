@@ -1,20 +1,13 @@
-# ==========================================================
-# SecureChat - Final Year Diploma Project
-# Created by: Aryan Yadav and Jeet Shah
-# ==========================================================
-
 import json
 import os
 from datetime import datetime
 from typing import Dict, List
-
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-app = FastAPI(title="SecureChat Student Project")
+app = FastAPI()
 
-# Enable CORS so the frontend can talk to the backend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -23,138 +16,107 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# This class manages all the active connections
-class ChatManager:
+class ChatHandler:
     def __init__(self):
-        # We store active connections in a dictionary
-        # Format: { "room_id": { websocket_object: "username" } }
-        self.rooms: Dict[str, Dict[WebSocket, str]] = {}
-        
-        # We store room passwords here
-        # Format: { "room_id": "password" }
-        self.passwords: Dict[str, str] = {}
+        self.active_rooms = {}
+        self.room_passwords = {}
 
-    # Method to check if password is correct or create a new room
-    def verify_room(self, room_id: str, password: str):
-        if room_id not in self.passwords:
-            # First person to join sets the password
-            self.passwords[room_id] = password
+    def check_room(self, room_id, password):
+        if room_id not in self.room_passwords:
+            self.room_passwords[room_id] = password
             return True
-        return self.passwords[room_id] == password
+        return self.room_passwords[room_id] == password
 
-    # Method to add a new user to a room
-    async def add_user(self, websocket: WebSocket, room_id: str, username: str, password: str):
-        # Check password first
-        if not self.verify_room(room_id, password):
+    async def join_room(self, websocket, room_id, username, password):
+        if not self.check_room(room_id, password):
             await websocket.accept()
-            await websocket.send_json({"type": "error", "message": "Wrong password for this room!"})
+            await websocket.send_json({"type": "error", "message": "Incorrect Password!"})
             await websocket.close()
             return False
 
         await websocket.accept()
         
-        # Initialize room if it doesn't exist in the active rooms list
-        if room_id not in self.rooms:
-            self.rooms[room_id] = {}
-            
-        # Check if name is taken
-        if any(u == username for u in self.rooms[room_id].values()):
-            await websocket.send_json({"type": "error", "message": "Name already taken!"})
+        if room_id not in self.active_rooms:
+            self.active_rooms[room_id] = {}
+        
+        if any(name == username for name in self.active_rooms[room_id].values()):
+            await websocket.send_json({"type": "error", "message": "This name is already used!"})
             await websocket.close()
             return False
 
-        # Save the connection
-        self.rooms[room_id][websocket] = username
+        self.active_rooms[room_id][websocket] = username
         
-        # Tell everyone that someone joined
-        await self.broadcast(room_id, {
+        await self.send_to_all(room_id, {
             "type": "system",
-            "content": f"User '{username}' connected to the secure tunnel.",
+            "content": f"{username} joined the room.",
             "timestamp": datetime.now().isoformat()
         })
         return True
 
-    # Method to remove a user when they leave
-    def remove_user(self, websocket: WebSocket, room_id: str):
-        name = "Someone"
-        if room_id in self.rooms:
-            if websocket in self.rooms[room_id]:
-                name = self.rooms[room_id].pop(websocket)
-            # If room is empty, we keep the password but the room is inactive
+    def leave_room(self, websocket, room_id):
+        name = "User"
+        if room_id in self.active_rooms:
+            if websocket in self.active_rooms[room_id]:
+                name = self.active_rooms[room_id].pop(websocket)
         return name
 
-    # Method to send a message to everyone in the room
-    async def broadcast(self, room_id: str, payload: dict):
-        if room_id in self.rooms:
-            # We loop through all users in that room
-            for client in list(self.rooms[room_id].keys()):
+    async def send_to_all(self, room_id, data):
+        if room_id in self.active_rooms:
+            for socket in list(self.active_rooms[room_id].keys()):
                 try:
-                    await client.send_json(payload)
+                    await socket.send_json(data)
                 except:
-                    # If sending fails, the client probably disconnected
-                    self.remove_user(client, room_id)
+                    self.leave_room(socket, room_id)
 
-manager = ChatManager()
+chat_manager = ChatHandler()
 
-# API for the frontend to check password before connecting WS
 @app.post("/api/verify-room")
-async def check_room(request_data: dict):
-    rid = request_data.get("room_id")
-    pwd = request_data.get("password")
+async def verify(data: dict):
+    rid = data.get("room_id")
+    pwd = data.get("password")
     
-    if manager.verify_room(rid, pwd):
-        return {"success": True}
+    if chat_manager.check_room(rid, pwd):
+        return {"status": "ok"}
     else:
-        return {"success": False, "message": "Invalid password for this room."}
+        return {"status": "fail", "msg": "Incorrect password for this room."}
 
-# The main WebSocket endpoint
-@app.websocket("/ws/{room_id}/{user_name}")
-async def chat_socket(websocket: WebSocket, room_id: str, user_name: str, pwd: str = ""):
-    # Try to connect the user
-    if await manager.add_user(websocket, room_id, user_name, pwd):
+@app.websocket("/ws/{room_id}/{username}")
+async def socket_endpoint(websocket: WebSocket, room_id: str, username: str, pwd: str = ""):
+    if await chat_manager.join_room(websocket, room_id, username, pwd):
         try:
             while True:
-                # Wait for a message from the client
-                msg_text = await websocket.receive_text()
-                
-                # Check if it's JSON
+                raw_data = await websocket.receive_text()
                 try:
-                    msg_data = json.loads(msg_text)
-                    content = msg_data.get("content", "").strip()
+                    parsed = json.loads(raw_data)
+                    msg_content = parsed.get("content", "").strip()
                 except:
-                    content = msg_text.strip()
+                    msg_content = raw_data.strip()
 
-                if content:
-                    # Broadcast the message to the room
-                    await manager.broadcast(room_id, {
+                if msg_content:
+                    await chat_manager.send_to_all(room_id, {
                         "type": "message",
-                        "username": user_name,
-                        "content": content,
+                        "username": username,
+                        "content": msg_content,
                         "timestamp": datetime.now().isoformat()
                     })
-
         except WebSocketDisconnect:
-            # Handle user leaving
-            user = manager.remove_user(websocket, room_id)
-            await manager.broadcast(room_id, {
+            user = chat_manager.leave_room(websocket, room_id)
+            await chat_manager.send_to_all(room_id, {
                 "type": "system",
-                "content": f"{user} has left the chat.",
+                "content": f"{user} left.",
                 "timestamp": datetime.now().isoformat()
             })
         except Exception:
-            manager.remove_user(websocket, room_id)
+            chat_manager.leave_room(websocket, room_id)
 
-# Simple health check
 @app.get("/api/status")
-async def get_status():
-    return {"status": "running", "active_rooms": len(manager.rooms)}
+async def status():
+    return {"active_rooms": len(chat_manager.active_rooms)}
 
-# Serve the HTML files
-static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
-app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
+static_folder = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
+app.mount("/", StaticFiles(directory=static_folder, html=True), name="static")
 
 if __name__ == "__main__":
     import uvicorn
-    # Railway and other hosts provide a PORT environment variable
-    port = int(os.environ.get("PORT", 8000))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    p = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=p)

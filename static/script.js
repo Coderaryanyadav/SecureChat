@@ -1,8 +1,4 @@
-// SecureChat - Script
-// Managed by Aryan and Jeet
-
 document.addEventListener('DOMContentLoaded', () => {
-    // Get all UI elements
     const loginDiv = document.getElementById('auth-screen');
     const chatDiv = document.getElementById('chat-screen');
     const nameInput = document.getElementById('username');
@@ -21,9 +17,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let myRoom = '';
     let myKey = null;
 
-    // --- ENCRYPTION FUNCTIONS ---
-
-    // Generate key from password
     async function makeKey(pwd) {
         const encoder = new TextEncoder();
         const data = encoder.encode(pwd);
@@ -33,7 +26,6 @@ document.addEventListener('DOMContentLoaded', () => {
         );
     }
 
-    // Encrypt the message
     async function encryptMsg(text) {
         if (!myKey) return text;
         const encoder = new TextEncoder();
@@ -47,7 +39,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return btoa(String.fromCharCode(...combined));
     }
 
-    // Decrypt the message
     async function decryptMsg(b64) {
         if (!myKey) return b64;
         try {
@@ -57,12 +48,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const dec = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, myKey, data);
             return new TextDecoder().decode(dec);
         } catch (err) {
-            console.log("Error decrypting:", err);
             return "[This message is encrypted and you don't have the key]";
         }
     }
-
-    // --- CHAT LOGIC ---
 
     async function startChat() {
         const name = nameInput.value.trim();
@@ -78,7 +66,6 @@ document.addEventListener('DOMContentLoaded', () => {
         joinBtn.innerText = "Connecting...";
 
         try {
-            // Check room status first
             const resp = await fetch('/api/verify-room', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -93,12 +80,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Prepare encryption
             myKey = await makeKey(pass + room);
             myName = name;
             myRoom = room;
 
-            // Connect WebSocket
             const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
             const url = `${protocol}//${location.host}/ws/${room}/${name}?pwd=${encodeURIComponent(pass)}`;
 
@@ -129,12 +114,11 @@ document.addEventListener('DOMContentLoaded', () => {
             ws.onclose = () => {
                 addSystemMsg("Disconnected.");
                 setTimeout(() => {
-                    location.reload(); // Go back to login
+                    location.reload();
                 }, 1500);
             };
 
         } catch (e) {
-            console.log(e);
             alert("Connection Failed!");
             joinBtn.disabled = false;
         }
@@ -169,7 +153,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return p.innerHTML;
     }
 
-    // Event Listeners
     joinBtn.onclick = startChat;
 
     form.onsubmit = async (e) => {
@@ -186,7 +169,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (ws) ws.close();
     };
 
-    // Quick enter key support
     [nameInput, roomInput, passInput].forEach(el => {
         el.onkeypress = (e) => { if (e.key === 'Enter') startChat(); };
     });
