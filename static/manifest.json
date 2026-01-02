@@ -1,0 +1,15 @@
+{
+  "name": "SecureChat",
+  "short_name": "SecureChat",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#1d4ed8",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3106/3106856.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

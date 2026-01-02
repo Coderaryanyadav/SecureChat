@@ -5,12 +5,19 @@ import asyncio
 import uuid
 from datetime import datetime
 from typing import Dict, List
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from passlib.context import CryptContext
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
+limiter = Limiter(key_func=get_remote_address)
 app = FastAPI()
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 app.add_middleware(
@@ -38,6 +45,7 @@ class ChatHandler:
     def __init__(self):
         self.active_rooms = {}
         self.room_passwords = {}
+        self.room_admins = {}
 
     def check_room(self, room_id, password):
         if room_id not in self.room_passwords:
@@ -56,6 +64,7 @@ class ChatHandler:
         
         if room_id not in self.active_rooms:
             self.active_rooms[room_id] = {}
+            self.room_admins[room_id] = username
         
         if any(name == username for name in self.active_rooms[room_id].values()):
             await websocket.send_json({"type": "error", "message": "This name is already used!"})
@@ -67,7 +76,7 @@ class ChatHandler:
         await self.broadcast_user_list(room_id)
         await self.send_to_all(room_id, {
             "type": "system",
-            "content": f"{username} joined the secure tunnel.",
+            "content": f"{username} joined. Admin is {self.room_admins[room_id]}",
             "timestamp": datetime.now().isoformat()
         })
         return True
@@ -75,13 +84,18 @@ class ChatHandler:
     async def broadcast_user_list(self, room_id):
         if room_id in self.active_rooms:
             users = list(self.active_rooms[room_id].values())
-            await self.send_to_all(room_id, {"type": "user_list", "users": users})
+            await self.send_to_all(room_id, {"type": "user_list", "users": users, "admin": self.room_admins.get(room_id)})
 
     def leave_room(self, websocket, room_id):
         name = None
         if room_id in self.active_rooms:
             if websocket in self.active_rooms[room_id]:
                 name = self.active_rooms[room_id].pop(websocket)
+                if not self.active_rooms[room_id]:
+                    # Room empty, cleanup
+                    self.active_rooms.pop(room_id)
+                    self.room_passwords.pop(room_id)
+                    self.room_admins.pop(room_id)
         return name
 
     async def send_to_all(self, room_id, data):
@@ -95,7 +109,8 @@ class ChatHandler:
 chat_manager = ChatHandler()
 
 @app.post("/api/register")
-async def register(data: dict):
+@limiter.limit("5/minute")
+async def register(request: Request, data: dict):
     user = data.get("username")
     pwd = data.get("password")
     if not user or not pwd: return {"status": "fail", "msg": "Missing data"}
@@ -109,7 +124,8 @@ async def register(data: dict):
         return {"status": "fail", "msg": "User already exists"}
 
 @app.post("/api/login")
-async def login(data: dict):
+@limiter.limit("10/minute")
+async def login(request: Request, data: dict):
     user = data.get("username")
     pwd = data.get("password")
     db = get_db()
