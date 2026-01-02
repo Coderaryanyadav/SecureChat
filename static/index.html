@@ -16,12 +16,12 @@
 </head>
 
 <body>
+    <div id="toast-container"></div>
     <div id="app">
-        <!-- Identity Screen -->
         <div id="user-screen" class="screen">
             <div class="glass-card ghost-card auth-card">
                 <div class="logo-section">
-                    <div class="logo-icon">�</div>
+                    <div class="logo-icon">👻</div>
                     <h1>Ghost<span>Chat</span></h1>
                 </div>
                 <p class="subtitle">Enter the phantom realm. Messages vanish like mist.</p>
@@ -38,36 +38,57 @@
                     <button id="reg-btn" class="primary-btn"
                         style="background: rgba(255,255,255,0.03); color: #fff; border: 1px solid rgba(255,255,255,0.1);">Register</button>
                 </div>
+                <button id="show-about"
+                    style="background:none; border:none; color:rgba(255,255,255,0.2); cursor:pointer; margin-top:24px; font-size:11px; letter-spacing:1px;">BY
+                    ARYAN & JEET</button>
             </div>
         </div>
 
-        <!-- Portal Screen -->
         <div id="auth-screen" class="screen hidden">
             <div class="glass-card ghost-card auth-card">
                 <div class="logo-section">
-                    <div class="logo-icon">�</div>
+                    <div class="logo-icon">🔮</div>
                     <h1>Spectral<span>Portal</span></h1>
                 </div>
                 <div id="pinned-rooms" style="margin-bottom: 24px; text-align: left;">
-                    <p
-                        style="font-size: 10px; font-weight: 800; color: #a78bfa; margin-bottom: 12px; letter-spacing: 2px;">
-                        PAST ECHOES</p>
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <p style="font-size: 10px; font-weight: 800; color: #a78bfa; letter-spacing: 2px;">PAST ECHOES
+                        </p>
+                        <button id="clear-history"
+                            style="background:none; border:none; color:#f87171; font-size:9px; cursor:pointer; font-weight:700;">WIPE
+                            ALL</button>
+                    </div>
                     <div id="room-list" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
                 </div>
                 <div class="form-group"><label>Alias</label><input type="text" id="username" placeholder="Room handle">
                 </div>
+                <div class="form-group">
+                    <label>Avatar Soul</label>
+                    <div class="avatar-selector">
+                        <span class="av-opt active" data-av="👻">👻</span>
+                        <span class="av-opt" data-av="💀">💀</span>
+                        <span class="av-opt" data-av="👽">👽</span>
+                        <span class="av-opt" data-av="🎃">🎃</span>
+                        <span class="av-opt" data-av="🦇">🦇</span>
+                        <span class="av-opt" data-av="👺">👺</span>
+                    </div>
+                </div>
                 <div class="form-group"><label>Room Code</label><input type="text" id="room-id"
                         placeholder="Dimension key"></div>
-                <div class="form-group"><label>Encryption</label><input type="password" id="room-password"
-                        placeholder="Passphrase"></div>
+                <div class="form-group">
+                    <label>Encryption Key</label>
+                    <input type="password" id="room-password" placeholder="Passphrase">
+                    <div id="pass-strength">
+                        <div id="strength-bar"></div>
+                    </div>
+                </div>
                 <button id="join-btn" class="primary-btn">Enter Dimension</button>
                 <button id="logout-btn"
-                    style="background:none; border:none; color:rgba(255,255,255,0.4); cursor:pointer; margin-top:20px; font-size:12px; font-weight: 600; text-decoration: underline;">Vanish
-                    from here</button>
+                    style="background:none; border:none; color:rgba(255,255,255,0.4); cursor:pointer; margin-top:20px; font-size:12px; font-weight: 600; text-decoration: underline;">Vanish</button>
             </div>
         </div>
 
-        <!-- Ghost Workspace -->
         <div id="chat-screen" class="screen hidden">
             <div class="chat-main glass-card ghost-workspace">
                 <aside id="sidebar" class="sidebar hidden">
@@ -77,22 +98,35 @@
                 <div class="chat-container">
                     <header class="chat-header">
                         <div class="room-info">
-                            <button id="toggle-sidebar" class="icon-btn">�</button>
+                            <button id="toggle-sidebar" class="icon-btn">👤</button>
                             <div class="status-indicator"></div>
                             <h2 id="display-room">Void</h2>
-                            <button id="show-qr" class="icon-btn" style="margin-left: 12px;">�</button>
+                            <button id="copy-info" class="icon-btn" style="margin-left: 12px;"
+                                title="Copy Room Info">📋</button>
+                            <button id="show-qr" class="icon-btn" style="margin-left: 8px;"
+                                title="Room Portal QR">🔍</button>
                         </div>
                         <div class="user-info">
                             <span id="display-username">Incognito</span>
-                            <button id="leave-btn" class="icon-btn" style="color: #6366f1;">✕</button>
+                            <button id="panic-btn" class="icon-btn" style="color: #f87171;"
+                                title="PANIC EXIT">☣️</button>
                         </div>
                     </header>
                     <main id="messages" class="message-area"></main>
                     <div id="typing-area"></div>
                     <footer class="chat-footer">
                         <div class="toolbar">
-                            <label for="img-input" class="icon-btn">�️</label>
+                            <label for="img-input" class="icon-btn">🖼️</label>
                             <input type="file" id="img-input" accept="image/*" style="display:none;">
+                            <button id="emoji-btn" class="icon-btn">😊</button>
+                            <div id="emoji-picker" class="hidden">
+                                <span class="emoji-opt">👻</span><span class="emoji-opt">🔒</span><span
+                                    class="emoji-opt">🔮</span>
+                                <span class="emoji-opt">✨</span><span class="emoji-opt">💀</span><span
+                                    class="emoji-opt">🔥</span>
+                                <span class="emoji-opt">💬</span><span class="emoji-opt">⌛</span><span
+                                    class="emoji-opt">👽</span>
+                            </div>
                             <button id="destruct-toggle" class="icon-btn">⏳</button>
                         </div>
                         <form id="message-form">
@@ -105,6 +139,33 @@
             </div>
         </div>
     </div>
+
+    <!-- About Modal -->
+    <div id="about-modal" class="modal hidden">
+        <div class="modal-content glass-card">
+            <h2 style="color: var(--primary); margin-bottom: 15px;">GhostChat v2.0</h2>
+            <p style="font-size: 14px; line-height: 1.6; color: var(--text-main);">
+                A state-of-the-art secure transmission protocol designed for total ephemerality.
+                Messages are never stored on the server and vanish from existence after 30 seconds.
+            </p>
+            <div style="margin-top: 25px; border-top: 1px solid var(--glass-border); padding-top: 15px;">
+                <p style="font-size: 11px; letter-spacing: 2px; color: var(--text-dim);">ARCHITECTS</p>
+                <p style="font-size: 18px; font-weight: 800; margin-top: 10px;">Aryan Yadav & Jeet Shah</p>
+            </div>
+            <button id="close-about" class="primary-btn" style="margin-top: 30px;">Dismiss</button>
+        </div>
+    </div>
+
+    <div id="qr-modal" class="modal hidden">
+        <div class="modal-content glass-card">
+            <h3>Portal QR</h3>
+            <div id="qrcode"></div>
+            <button id="close-qr" class="primary-btn">Dismiss</button>
+        </div>
+    </div>
+
+    <audio id="woosh-sound" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3"
+        preload="auto"></audio>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="script.js"></script>
 </body>
