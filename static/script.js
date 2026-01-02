@@ -52,9 +52,10 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     async function loadHistory() {
-        const list = await (await fetch(`/api/history/${currentUserId}`)).json();
+        if (!currentUserId) return;
+        const res = await (await fetch(`/api/history/${currentUserId}`)).json();
         roomList.innerHTML = '';
-        list.forEach(rid => {
+        res.forEach(rid => {
             const span = document.createElement('span'); span.className = 'room-tag'; span.innerText = rid;
             span.onclick = () => { roomInput.value = rid; }; roomList.appendChild(span);
         });
@@ -77,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.type === 'user_list') {
                 userListDiv.innerHTML = data.users.map(u => `<div class="user-item">${u}</div>`).join('');
             } else if (data.type === 'typing') {
-                typingArea.innerText = data.status ? `${data.username} is typing...` : '';
+                typingArea.innerHTML = data.status ? `${data.username} is typing<span class="typing-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>` : '';
             } else if (data.type === 'system') {
                 addMsg(null, data.content, 'system');
             } else if (data.type === 'message' || data.type === 'image') {
@@ -104,7 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (type === 'system') { d.className = 'system-msg'; d.innerText = txt; }
         else {
             d.className = `message ${isMe ? 'my-msg' : 'other-msg'} msg-${user} ${destruct ? 'destructing' : ''}`;
-            d.innerHTML = `${isMe ? '' : `<div class='msg-header'>${user}</div>`}<div class='msg-content'>${txt}</div>${destruct ? '<div class="self-destruct-timer">Purging in 30s...</div>' : ''}`;
+            d.innerHTML = `${isMe ? '' : `<div class='msg-header'>${user}</div>`}<div class='msg-content'>${txt}</div>${destruct ? '<div class="self-destruct-timer">⏲️ Purging in 30s...</div>' : ''}`;
             if (destruct) setTimeout(() => d.remove(), 30000);
         }
         chatArea.appendChild(d); chatArea.scrollTop = chatArea.scrollHeight;
@@ -113,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function addImage(user, url, destruct) {
         const d = document.createElement('div'), isMe = user === myName;
         d.className = `message ${isMe ? 'my-msg' : 'other-msg'} msg-${user} ${destruct ? 'destructing' : ''}`;
-        d.innerHTML = `${isMe ? '' : `<div class='msg-header'>${user}</div>`}<img src="${url}" class="img-msg" onclick="window.open('${url}')">${destruct ? '<div class="self-destruct-timer">Purging in 30s...</div>' : ''}`;
+        d.innerHTML = `${isMe ? '' : `<div class='msg-header'>${user}</div>`}<img src="${url}" class="img-msg" onclick="window.open('${url}')">${destruct ? '<div class="self-destruct-timer">⏲️ Purging in 30s...</div>' : ''}`;
         if (destruct) setTimeout(() => d.remove(), 30000);
         chatArea.appendChild(d); chatArea.scrollTop = chatArea.scrollHeight;
     }
