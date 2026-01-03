@@ -3,12 +3,12 @@ import os
 import sqlite3
 import asyncio
 import uuid
+import bcrypt
 from datetime import datetime
 from typing import Dict, List
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from passlib.context import CryptContext
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -18,8 +18,6 @@ app = FastAPI()
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -27,6 +25,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+def verify_password(password: str, hashed: str) -> bool:
+    try:
+        return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
+    except:
+        return False
 
 def get_db():
     db = sqlite3.connect("database.db")
@@ -92,7 +99,6 @@ class ChatHandler:
             if websocket in self.active_rooms[room_id]:
                 name = self.active_rooms[room_id].pop(websocket)
                 if not self.active_rooms[room_id]:
-                    # Room empty, cleanup
                     self.active_rooms.pop(room_id)
                     self.room_passwords.pop(room_id)
                     self.room_admins.pop(room_id)
@@ -116,12 +122,16 @@ async def register(request: Request, data: dict):
     if not user or not pwd: return {"status": "fail", "msg": "Missing data"}
     db = get_db()
     try:
-        hashed = pwd_context.hash(pwd)
+        existing = db.execute("SELECT * FROM users WHERE username = ?", (user,)).fetchone()
+        if existing:
+            return {"status": "fail", "msg": "User already exists"}
+        hashed = hash_password(pwd)
         db.execute("INSERT INTO users (username, password) VALUES (?, ?)", (user, hashed))
         db.commit()
         return {"status": "ok"}
-    except:
-        return {"status": "fail", "msg": "User already exists"}
+    except Exception as e:
+        print(f"REG ERROR: {e}")
+        return {"status": "fail", "msg": "Spectral registration failed"}
 
 @app.post("/api/login")
 @limiter.limit("10/minute")
@@ -129,15 +139,18 @@ async def login(request: Request, data: dict):
     user = data.get("username")
     pwd = data.get("password")
     db = get_db()
-    res = db.execute("SELECT * FROM users WHERE username = ?", (user,)).fetchone()
-    if res and pwd_context.verify(pwd, res['password']):
-        return {"status": "ok", "user_id": res['id']}
-    return {"status": "fail", "msg": "Wrong username or password"}
+    try:
+        res = db.execute("SELECT * FROM users WHERE username = ?", (user,)).fetchone()
+        if res and verify_password(pwd, res['password']):
+            return {"status": "ok", "user_id": res['id']}
+        return {"status": "fail", "msg": "Invalid credentials"}
+    except Exception as e:
+        print(f"LOGIN ERROR: {e}")
+        return {"status": "fail", "msg": "Manifestation failed"}
 
 @app.post("/api/save-room")
 async def save_room(data: dict):
-    uid = data.get("user_id")
-    rid = data.get("room_id")
+    uid, rid = data.get("user_id"), data.get("room_id")
     db = get_db()
     db.execute("INSERT OR IGNORE INTO history (user_id, room_id) VALUES (?, ?)", (uid, rid))
     db.commit()
@@ -151,11 +164,9 @@ async def get_history(user_id: int):
 
 @app.post("/api/verify-room")
 async def verify(data: dict):
-    rid = data.get("room_id")
-    pwd = data.get("password")
-    if chat_manager.check_room(rid, pwd):
-        return {"status": "ok"}
-    return {"status": "fail", "msg": "Incorrect password for this room."}
+    rid, pwd = data.get("room_id"), data.get("password")
+    if chat_manager.check_room(rid, pwd): return {"status": "ok"}
+    return {"status": "fail", "msg": "Portal key incorrect"}
 
 async def schedule_destruct(room_id, msg_id):
     await asyncio.sleep(30)
@@ -166,46 +177,38 @@ async def socket_endpoint(websocket: WebSocket, room_id: str, username: str, pwd
     if await chat_manager.join_room(websocket, room_id, username, pwd):
         try:
             while True:
-                raw_data = await websocket.receive_text()
-                try:
-                    parsed = json.loads(raw_data)
-                    m_type = parsed.get("type", "message")
-                    
-                    if m_type == "typing":
-                        await chat_manager.send_to_all(room_id, {"type": "typing", "username": username, "status": parsed.get("status")})
-                    else:
-                        msg_id = str(uuid.uuid4())
-                        msg_obj = {
-                            "type": m_type,
-                            "id": msg_id,
-                            "username": username,
-                            "content": parsed.get("content", ""),
-                            "timestamp": datetime.now().isoformat(),
-                            "self_destruct": parsed.get("self_destruct", False)
-                        }
-                        await chat_manager.send_to_all(room_id, msg_obj)
-                        
-                        if parsed.get("self_destruct"):
-                            asyncio.create_task(schedule_destruct(room_id, msg_id))
-                except:
-                    pass
+                data = await websocket.receive_json()
+                m_type = data.get("type", "message")
+                
+                if m_type == "typing":
+                    await chat_manager.send_to_all(room_id, {"type": "typing", "username": username, "status": data.get("status")})
+                elif m_type == "kick":
+                    if username == chat_manager.room_admins.get(room_id):
+                        target = data.get("target")
+                        await chat_manager.send_to_all(room_id, {"type": "kicked", "target": target})
+                elif m_type == "wipe":
+                    if username == chat_manager.room_admins.get(room_id):
+                        await chat_manager.send_to_all(room_id, {"type": "wipe_all"})
+                else:
+                    msg_id = str(uuid.uuid4())
+                    msg_obj = {
+                        "type": m_type, "id": msg_id, "username": username,
+                        "content": data.get("content", ""), "timestamp": datetime.now().isoformat(),
+                        "self_destruct": data.get("self_destruct", False)
+                    }
+                    await chat_manager.send_to_all(room_id, msg_obj)
+                    if data.get("self_destruct"): asyncio.create_task(schedule_destruct(room_id, msg_id))
         except WebSocketDisconnect:
             user = chat_manager.leave_room(websocket, room_id)
             if user:
                 await chat_manager.broadcast_user_list(room_id)
-                await chat_manager.send_to_all(room_id, {
-                    "type": "delete_all",
-                    "username": user,
-                    "content": f"{user} left.",
-                    "timestamp": datetime.now().isoformat()
-                })
-        except Exception:
+                await chat_manager.send_to_all(room_id, {"type": "delete_all", "username": user, "content": f"{user} vanished", "timestamp": datetime.now().isoformat()})
+        except:
             chat_manager.leave_room(websocket, room_id)
 
-static_folder = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
+static_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "static")
 app.mount("/", StaticFiles(directory=static_folder, html=True), name="static")
 
 if __name__ == "__main__":
     import uvicorn
-    p = int(os.environ.get("PORT", 8000))
-    uvicorn.run(app, host="0.0.0.0", port=p)
+    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))

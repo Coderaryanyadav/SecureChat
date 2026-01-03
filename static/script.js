@@ -1,202 +1,192 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const userScreen = document.getElementById('user-screen'), authScreen = document.getElementById('auth-screen'), chatScreen = document.getElementById('chat-screen');
-    const accUser = document.getElementById('acc-user'), accPass = document.getElementById('acc-pass'), loginBtn = document.getElementById('login-btn'), regBtn = document.getElementById('reg-btn');
-    const nameInput = document.getElementById('username'), roomInput = document.getElementById('room-id'), passInput = document.getElementById('room-password'), joinBtn = document.getElementById('join-btn');
-    const roomList = document.getElementById('room-list'), logoutBtn = document.getElementById('logout-btn'), leaveBtn = document.getElementById('leave-btn');
-    const form = document.getElementById('message-form'), input = document.getElementById('message-input'), chatArea = document.getElementById('messages'), typingArea = document.getElementById('typing-area');
-    const roomLabel = document.getElementById('display-room'), userLabel = document.getElementById('display-username'), userListDiv = document.getElementById('user-list');
-    const sidebar = document.getElementById('sidebar'), toggleSidebar = document.getElementById('toggle-sidebar');
-    const qrModal = document.getElementById('qr-modal'), showQr = document.getElementById('show-qr'), closeQr = document.getElementById('close-qr'), qrcodeDiv = document.getElementById('qrcode');
-    const imgInput = document.getElementById('img-input'), destructToggle = document.getElementById('destruct-toggle');
-    const strengthBar = document.getElementById('strength-bar'), clearHistory = document.getElementById('clear-history'), panicBtn = document.getElementById('panic-btn');
-    const copyInfo = document.getElementById('copy-info'), emojiBtn = document.getElementById('emoji-btn'), emojiPicker = document.getElementById('emoji-picker');
-    const aboutModal = document.getElementById('about-modal'), showAbout = document.getElementById('show-about'), closeAbout = document.getElementById('close-about');
-    const woosh = document.getElementById('woosh-sound'), avOpts = document.querySelectorAll('.av-opt');
-
-    let ws = null, myName = '', myRoom = '', myKey = null, currentUserId = null, isDestruct = false, typingTimeout = null, lastTypingSent = 0, selectedAvatar = '👻';
-
-    function showToast(msg, color = '#a78bfa') {
-        const container = document.getElementById('toast-container');
-        const t = document.createElement('div'); t.className = 'toast'; t.innerText = msg; t.style.borderLeftColor = color;
-        container.appendChild(t); setTimeout(() => t.remove(), 4000);
-    }
-
-    avOpts.forEach(opt => opt.onclick = () => {
-        avOpts.forEach(o => o.classList.remove('active'));
-        opt.classList.add('active'); selectedAvatar = opt.dataset.av;
-    });
-
-    passInput.oninput = () => {
-        const val = passInput.value; let score = 0;
-        if (val.length > 5) score += 25; if (/[A-Z]/.test(val)) score += 25;
-        if (/[0-9]/.test(val)) score += 25; if (/[^A-Za-z0-9]/.test(val)) score += 25;
-        strengthBar.style.width = score + '%';
-        strengthBar.style.backgroundColor = score < 50 ? '#ef4444' : (score < 75 ? '#fbbf24' : '#22c55e');
+    const $ = id => document.getElementById(id.replace('#', ''));
+    const elements = {
+        accUser: $('#acc-user'), accPass: $('#acc-pass'), loginBtn: $('#login-btn'), regBtn: $('#reg-btn'),
+        nameInput: $('#username'), roomInput: $('#room-id'), passInput: $('#room-password'), joinBtn: $('#join-btn'),
+        roomList: $('#room-list'), logoutBtn: $('#logout-btn'), genRoom: $('#gen-room'),
+        form: $('#message-form'), input: $('#message-input'), chatArea: $('#messages'), typingArea: $('#typing-area'),
+        roomLabel: $('#display-room'), userListDiv: $('#user-list'), sidebar: $('#sidebar'),
+        qrModal: $('#qr-modal'), qrcodeDiv: $('#qrcode'), imgInput: $('#img-input'),
+        destructToggle: $('#destruct-toggle'), strengthBar: $('#strength-bar'),
+        adminPanel: $('#admin-panel'), wipeBtn: $('#wipe-btn'), panicBtn: $('#panic-btn'),
+        copyInfo: $('#copy-info'), emojiBtn: $('#emoji-btn'), emojiPicker: $('#emoji-picker'),
+        woosh: $('#woosh-sound'), avOpts: document.querySelectorAll('.av-opt')
     };
 
-    emojiBtn.onclick = () => emojiPicker.classList.toggle('hidden');
-    document.querySelectorAll('.emoji-opt').forEach(opt => opt.onclick = () => {
-        input.value += opt.innerText; emojiPicker.classList.add('hidden'); input.focus();
+    let state = { ws: null, name: '', room: '', key: null, uid: null, isDestruct: false, avatar: '👻', isAdmin: false, typingSent: 0 };
+
+    const showToast = (msg, color = '#a78bfa') => {
+        const t = document.createElement('div'); t.className = 'toast'; t.innerText = msg; t.style.borderLeftColor = color;
+        $('#toast-container').appendChild(t); setTimeout(() => t.remove(), 4000);
+    };
+
+    elements.genRoom.onclick = () => {
+        const id = 'void-' + Math.random().toString(36).substring(2, 8);
+        elements.roomInput.value = id; showToast("New dimension mapped");
+    };
+
+    elements.avOpts.forEach(opt => opt.onclick = () => {
+        elements.avOpts.forEach(o => o.classList.remove('active'));
+        opt.classList.add('active'); state.avatar = opt.dataset.av;
     });
 
-    window.onclick = (e) => { if (!emojiBtn.contains(e.target) && !emojiPicker.contains(e.target)) emojiPicker.classList.add('hidden'); };
+    elements.passInput.oninput = () => {
+        const v = elements.passInput.value; let s = 0;
+        if (v.length > 6) s += 25; if (/[A-Z]/.test(v)) s += 25; if (/[0-9]/.test(v)) s += 25; if (/[^A-Za-z0-9]/.test(v)) s += 25;
+        elements.strengthBar.style.width = s + '%';
+        elements.strengthBar.style.backgroundColor = s < 50 ? '#ef4444' : (s < 75 ? '#fbbf24' : '#22c55e');
+    };
 
-    showAbout.onclick = () => aboutModal.classList.remove('hidden');
-    closeAbout.onclick = () => aboutModal.classList.add('hidden');
-
-    function arrayBufferToBase64(buffer) {
-        let binary = ''; const bytes = new Uint8Array(buffer);
-        for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
-        return btoa(binary);
-    }
-
-    function base64ToArrayBuffer(base64) {
-        const binary_string = atob(base64), len = binary_string.length, bytes = new Uint8Array(len);
-        for (let i = 0; i < len; i++) bytes[i] = binary_string.charCodeAt(i);
-        return bytes.buffer;
-    }
-
-    async function makeKey(pwd) {
-        const encoder = new TextEncoder(), data = encoder.encode(pwd);
+    // --- CRYPTO CORE ---
+    async function getSecretKey(pwd, room) {
+        const enc = new TextEncoder(), data = enc.encode(pwd + room);
         const hash = await crypto.subtle.digest('SHA-256', data);
         return await crypto.subtle.importKey('raw', hash, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
     }
 
-    async function encryptData(data) {
+    async function encrypt(data, isText = true) {
         const iv = crypto.getRandomValues(new Uint8Array(12));
-        const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, myKey, data);
-        const combined = new Uint8Array(iv.length + encrypted.byteLength);
-        combined.set(iv); combined.set(new Uint8Array(encrypted), iv.length);
-        return arrayBufferToBase64(combined.buffer);
+        const payload = isText ? new TextEncoder().encode(data) : data;
+        const enc = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, state.key, payload);
+        const blob = new Uint8Array(iv.length + enc.byteLength);
+        blob.set(iv); blob.set(new Uint8Array(enc), iv.length);
+        return btoa(String.fromCharCode(...blob));
     }
 
-    async function decryptData(b64) {
+    async function decrypt(b64, isText = true) {
         try {
-            const combined = new Uint8Array(base64ToArrayBuffer(b64));
-            const iv = combined.slice(0, 12), data = combined.slice(12);
-            return await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, myKey, data);
+            const blob = new Uint8Array(atob(b64).split('').map(c => c.charCodeAt(0)));
+            const iv = blob.slice(0, 12), data = blob.slice(12);
+            const dec = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, state.key, data);
+            return isText ? new TextDecoder().decode(dec) : dec;
         } catch (e) { return null; }
     }
 
-    loginBtn.onclick = async () => {
-        const u = accUser.value.trim(), p = accPass.value.trim(); if (!u || !p) return showToast("Enter credentials", "#ef4444");
-        try {
-            const res = await (await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: u, password: p }) })).json();
-            if (res.status === 'ok') { currentUserId = res.user_id; userScreen.classList.add('hidden'); authScreen.classList.remove('hidden'); loadHistory(); showToast("Manifested successfully"); } else showToast(res.msg, "#ef4444");
-        } catch (e) { showToast("Portal error", "#ef4444"); }
-    };
+    // --- MESSAGING ---
+    function addMsg(user, content, destruct, id, type = 'text') {
+        const div = document.createElement('div'), isMe = user === state.name;
+        div.id = `msg-${id}`;
+        if (type === 'system') {
+            div.className = 'system-msg'; div.innerText = `— ${content} —`;
+        } else {
+            div.className = `message ${isMe ? 'my-msg' : 'other-msg'} ${destruct ? 'destructing' : ''}`;
+            div.onclick = () => { elements.emojiPicker.classList.remove('hidden'); state.lastMsgId = id; };
+            let inner = isMe ? '' : `<div class='msg-header'>${user}</div>`;
+            if (type === 'image') inner += `<img src="${content}" class="img-msg" onclick="window.open('${content}')">`;
+            else if (type === 'file') inner += `<div class="file-msg">📎 <a href="${content}" target="_blank">Encrypted Ghost File</a></div>`;
+            else inner += `<div>${content}</div>`;
+            div.innerHTML = inner + `<div class='msg-status'>Sent ✓</div><div class="reactions" id="react-${id}"></div>`;
+        }
+        elements.chatArea.appendChild(div); elements.chatArea.scrollTop = elements.chatArea.scrollHeight;
+    }
 
-    regBtn.onclick = async () => {
-        const u = accUser.value.trim(), p = accPass.value.trim(); if (!u || !p) return;
+    // --- HANDLERS ---
+    elements.regBtn.onclick = async () => {
+        const u = elements.accUser.value.trim(), p = elements.accPass.value.trim(); if (!u || !p) return;
         const res = await (await fetch('/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: u, password: p }) })).json();
-        showToast(res.msg || "Identity registered!");
+        showToast(res.msg || "Spirit registered");
     };
 
-    async function loadHistory() {
-        if (!currentUserId) return;
-        const res = await (await fetch(`/api/history/${currentUserId}`)).json();
-        roomList.innerHTML = '';
-        res.forEach(rid => {
-            const span = document.createElement('span'); span.className = 'room-tag'; span.innerText = rid;
-            span.onclick = () => { roomInput.value = rid; showToast(`Echoed: ${rid}`); }; roomList.appendChild(span);
-        });
-    }
+    elements.loginBtn.onclick = async () => {
+        const u = elements.accUser.value.trim(), p = elements.accPass.value.trim(); if (!u || !p) return;
+        const res = await (await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: u, password: p }) })).json();
+        if (res.status === 'ok') {
+            state.uid = res.user_id;
+            $('#user-screen').classList.add('hidden'); $('#auth-screen').classList.remove('hidden');
+            const history = await (await fetch(`/api/history/${state.uid}`)).json();
+            elements.roomList.innerHTML = history.map(r => `<span class="room-tag">${r}</span>`).join('');
+            document.querySelectorAll('.room-tag').forEach(t => t.onclick = () => { elements.roomInput.value = t.innerText; showToast(`Echo: ${t.innerText}`); });
+        } else showToast(res.msg, "#ff4d4d");
+    };
 
-    clearHistory.onclick = () => { roomList.innerHTML = ''; showToast("All echoes vanished", "#f87171"); };
+    elements.joinBtn.onclick = async () => {
+        const n = `${state.avatar} ${elements.nameInput.value.trim()}`, r = elements.roomInput.value.trim(), p = elements.passInput.value.trim();
+        if (!elements.nameInput.value.trim() || !r || !p) return showToast("Keys missing", "#ff4d4d");
+        const res = await (await fetch('/api/verify-room', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ room_id: r, password: p }) })).json();
+        if (res.status === 'fail') return showToast(res.msg, "#ff4d4d");
 
-    joinBtn.onclick = async () => {
-        const name = `${selectedAvatar} ${nameInput.value.trim()}`, room = roomInput.value.trim(), pass = passInput.value.trim();
-        if (!nameInput.value.trim() || !room || !pass) return showToast("Portal keys missing", "#ef4444");
-        const res = await (await fetch('/api/verify-room', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ room_id: room, password: pass }) })).json();
-        if (res.status === "fail") return showToast(res.msg, "#ef4444");
+        fetch('/api/save-room', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: state.uid, room_id: r }) });
+        state.key = await getSecretKey(p, r); state.name = n; state.room = r;
 
-        fetch('/api/save-room', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: currentUserId, room_id: room }) });
-        myKey = await makeKey(pass + room); myName = name; myRoom = room;
+        const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        state.ws = new WebSocket(`${proto}//${location.host}/ws/${r}/${encodeURIComponent(n)}?pwd=${encodeURIComponent(p)}`);
 
-        const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-        ws = new WebSocket(`${protocol}//${location.host}/ws/${room}/${encodeURIComponent(name)}?pwd=${encodeURIComponent(pass)}`);
-        ws.onopen = () => { authScreen.classList.add('hidden'); chatScreen.classList.remove('hidden'); roomLabel.innerText = room; userLabel.innerText = name; showToast("Dimension entered"); };
-        ws.onmessage = async (e) => {
-            const data = JSON.parse(e.data);
-            if (data.type === 'user_list') {
-                userListDiv.innerHTML = data.users.map(u => `<div class="user-item">${u}${u === data.admin ? '<span class="admin-star">⭐</span>' : ''}</div>`).join('');
-                document.querySelectorAll('.message').forEach(m => {
-                    const author = m.getAttribute('data-author'); if (author && author !== myName && !data.users.includes(author)) m.remove();
-                });
-            } else if (data.type === 'typing') {
-                typingArea.innerHTML = data.status ? `${data.username} is typing<span class="typing-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>` : '';
-            } else if (data.type === 'system') {
-                addMsg(null, data.content, 'system');
-            } else if (data.type === 'delete_msg') {
-                const el = document.getElementById(`msg-${data.id}`); if (el) el.remove();
-            } else if (data.type === 'message' || data.type === 'image') {
-                const dec = await decryptData(data.content);
+        state.ws.onopen = () => { $('#auth-screen').classList.add('hidden'); $('#chat-screen').classList.remove('hidden'); elements.roomLabel.innerText = r; showToast("Portal Open"); };
+        state.ws.onmessage = async (e) => {
+            const d = JSON.parse(e.data);
+            if (d.type === 'user_list') {
+                state.isAdmin = (d.admin === state.name); elements.adminPanel.classList.toggle('hidden', !state.isAdmin);
+                elements.userListDiv.innerHTML = d.users.map(u => `<div class="user-item">${u}${u === d.admin ? ' ⭐' : ''}${state.isAdmin && u !== state.name ? ` <button class="kick-btn" onclick="banish('${u}')">KICK</button>` : ''}</div>`).join('');
+            } else if (d.type === 'message' || d.type === 'image' || d.type === 'file') {
+                const dec = await decrypt(d.content, d.type === 'message');
                 if (dec) {
-                    if (data.type === 'image') {
-                        const blob = new Blob([dec]), url = URL.createObjectURL(blob); addImage(data.username, url, data.self_destruct, data.id);
-                    } else {
-                        addMsg(data.username, new TextDecoder().decode(dec), 'message', data.self_destruct, data.id);
+                    let content = dec;
+                    if (d.type !== 'message') {
+                        const blob = new Blob([dec]); content = URL.createObjectURL(blob);
                     }
-                    if (document.hidden) { woosh.play().catch(() => { }); notify(`Ghostly Whispers`, `${data.username} manifested a message`); }
+                    addMsg(d.username, content, d.self_destruct, d.id, d.type === 'message' ? 'text' : d.type);
+                    if (document.hidden) { elements.woosh.play(); }
                 }
-            } else if (data.type === 'delete_all') {
-                document.querySelectorAll(`.author-${data.username.replace(/\s/g, '_')}`).forEach(el => el.remove());
-                addMsg(null, data.content, 'system');
-            }
+            } else if (d.type === 'reaction') {
+                const area = $(`react-${d.msgId}`);
+                if (area) {
+                    const r = document.createElement('span'); r.className = 'reaction-tag'; r.innerText = `${d.emoji} ${d.username.split(' ')[0]}`;
+                    area.appendChild(r);
+                }
+            } else if (d.type === 'system') addMsg(null, d.content, false, null, 'system');
+            else if (d.type === 'wipe_all') { elements.chatArea.innerHTML = ''; addMsg(null, "Dimension Cleansed", false, null, 'system'); }
+            else if (d.type === 'kicked' && d.target === state.name) { showToast("Banished!"); location.reload(); }
+            else if (d.type === 'typing') elements.typingArea.innerText = d.status ? `${d.username} is whispering...` : '';
+            else if (d.type === 'delete_msg') { const el = $(`msg-${d.id}`); if (el) { el.classList.add('vanished'); setTimeout(() => el.remove(), 500); } }
         };
-        ws.onclose = () => { showToast("Connection dissolved", "#f87171"); setTimeout(() => location.reload(), 1500); };
     };
 
-    function addMsg(user, txt, type, destruct, id) {
-        const d = document.createElement('div'), isMe = user === myName;
-        if (type === 'system') { d.className = 'system-msg'; d.innerText = txt; }
-        else {
-            d.id = `msg-${id}`; d.setAttribute('data-author', user);
-            d.className = `message ${isMe ? 'my-msg' : 'other-msg'} author-${user.replace(/\s/g, '_')} ${destruct ? 'destructing' : ''}`;
-            d.innerHTML = `${isMe ? '' : `<div class='msg-header'>${user}</div>`}<div class='msg-content'>${txt}</div><div class="msg-status">Sent ✓</div>`;
-        }
-        chatArea.appendChild(d); chatArea.scrollTop = chatArea.scrollHeight;
-    }
+    window.banish = (target) => state.ws.send(JSON.stringify({ type: 'kick', target: target }));
+    elements.wipeBtn.onclick = () => state.ws.send(JSON.stringify({ type: 'wipe' }));
 
-    function addImage(user, url, destruct, id) {
-        const d = document.createElement('div'), isMe = user === myName;
-        d.id = `msg-${id}`; d.setAttribute('data-author', user);
-        d.className = `message ${isMe ? 'my-msg' : 'other-msg'} author-${user.replace(/\s/g, '_')} ${destruct ? 'destructing' : ''}`;
-        d.innerHTML = `${isMe ? '' : `<div class='msg-header'>${user}</div>`}<img src="${url}" class="img-msg" onclick="window.open('${url}')"><div class="msg-status">Sent ✓</div>`;
-        chatArea.appendChild(d); chatArea.scrollTop = chatArea.scrollHeight;
-    }
-
-    form.onsubmit = async (e) => {
-        e.preventDefault(); const msg = input.value.trim(); if (!msg) return;
-        if (ws?.readyState === WebSocket.OPEN) {
-            const s = await encryptData(new TextEncoder().encode(msg));
-            ws.send(JSON.stringify({ type: 'message', content: s, self_destruct: isDestruct }));
-            input.value = ''; ws.send(JSON.stringify({ type: 'typing', status: false }));
-        }
+    elements.form.onsubmit = async (e) => {
+        e.preventDefault(); const v = elements.input.value.trim(); if (!v) return;
+        const enc = await encrypt(v);
+        state.ws.send(JSON.stringify({ type: 'message', content: enc, self_destruct: state.isDestruct }));
+        elements.input.value = ''; state.ws.send(JSON.stringify({ type: 'typing', status: false }));
     };
 
-    input.oninput = () => {
-        if (ws?.readyState === WebSocket.OPEN) {
-            const now = Date.now(); if (now - lastTypingSent > 1000) { ws.send(JSON.stringify({ type: 'typing', status: true })); lastTypingSent = now; }
-            clearTimeout(typingTimeout); typingTimeout = setTimeout(() => { ws.send(JSON.stringify({ type: 'typing', status: false })); lastTypingSent = 0; }, 2000);
-        }
+    elements.input.oninput = () => {
+        if (Date.now() - state.typingSent > 1500) { state.ws.send(JSON.stringify({ type: 'typing', status: true })); state.typingSent = Date.now(); }
+        clearTimeout(state.typingTimeout); state.typingTimeout = setTimeout(() => { state.ws.send(JSON.stringify({ type: 'typing', status: false })); state.typingSent = 0; }, 2000);
     };
 
-    imgInput.onchange = async (e) => {
-        const file = e.target.files[0]; if (file && ws?.readyState === WebSocket.OPEN) {
-            const reader = new FileReader(); reader.onload = async () => {
-                const s = await encryptData(new Uint8Array(reader.result));
-                ws.send(JSON.stringify({ type: 'image', content: s, self_destruct: isDestruct }));
-            }; reader.readAsArrayBuffer(file);
-        }
+    elements.imgInput.onchange = async (e) => {
+        const file = e.target.files[0]; if (!file) return;
+        const reader = new FileReader(); reader.onload = async () => {
+            const type = file.type.startsWith('image/') ? 'image' : 'file';
+            const enc = await encrypt(new Uint8Array(reader.result), false);
+            state.ws.send(JSON.stringify({ type: type, content: enc, self_destruct: state.isDestruct }));
+        }; reader.readAsArrayBuffer(file);
     };
 
-    panicBtn.onclick = () => { showToast("PANIC ACTIVATED", "#ef4444"); chatArea.innerHTML = ''; ws?.close(); };
-    copyInfo.onclick = () => { navigator.clipboard.writeText(`Room: ${myRoom}\nKey: ${passInput.value}`); showToast("Portal keys copied"); };
-    destructToggle.onclick = () => { isDestruct = !isDestruct; destructToggle.classList.toggle('active-destruct'); showToast(isDestruct ? "Vanish Mode Active" : "Vanish Mode Disabled"); };
-    toggleSidebar.onclick = () => sidebar.classList.toggle('hidden');
-    showQr.onclick = () => { qrcodeDiv.innerHTML = ''; new QRCode(qrcodeDiv, { text: `${location.origin}/?room=${myRoom}`, width: 150, height: 150 }); qrModal.classList.remove('hidden'); };
-    closeQr.onclick = () => qrModal.classList.add('hidden');
-    leaveBtn.onclick = () => ws?.close();
-    logoutBtn.onclick = () => location.reload();
+    elements.panicBtn.onclick = () => location.reload();
+    elements.copyInfo.onclick = () => { navigator.clipboard.writeText(`Bridge: ${state.room}\nSeal: ${elements.passInput.value}`); showToast("Portal keys copied"); };
+    elements.destructToggle.onclick = () => { state.isDestruct = !state.isDestruct; elements.destructToggle.style.color = state.isDestruct ? 'var(--primary)' : 'var(--text-ghost)'; showToast(state.isDestruct ? "Vanish Active" : "Vanish Disabled"); };
+    $('#show-about').onclick = () => $('#about-modal').classList.remove('hidden');
+    $('#close-about').onclick = () => $('#about-modal').classList.add('hidden');
+    $('#toggle-sidebar').onclick = () => elements.sidebar.classList.toggle('hidden');
+    $('#panic-btn').onclick = () => location.reload();
+    $('#show-qr').onclick = () => {
+        elements.qrcodeDiv.innerHTML = '';
+        new QRCode(elements.qrcodeDiv, { text: `${location.origin}/?room=${state.room}`, width: 160, height: 160 });
+        $('#qr-modal').classList.remove('hidden');
+    };
+    $('#close-qr').onclick = () => $('#qr-modal').classList.add('hidden');
+    $('#emoji-btn').onclick = () => { elements.emojiPicker.classList.toggle('hidden'); state.lastMsgId = null; };
+    document.querySelectorAll('.emoji-opt').forEach(opt => opt.onclick = () => {
+        const em = opt.innerText;
+        if (state.lastMsgId) {
+            state.ws.send(JSON.stringify({ type: 'reaction', emoji: em, msgId: state.lastMsgId, username: state.name }));
+            state.lastMsgId = null;
+        } else {
+            elements.input.value += em; elements.input.focus();
+        }
+        elements.emojiPicker.classList.add('hidden');
+    });
 });

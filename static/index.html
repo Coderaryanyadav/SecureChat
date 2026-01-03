@@ -7,127 +7,134 @@
     <title>GhostChat | Invisible & Secure Messaging</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#a78bfa">
-    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
     <div id="toast-container"></div>
     <div id="app">
+        <!-- START SCREEN -->
         <div id="user-screen" class="screen">
-            <div class="glass-card ghost-card auth-card">
+            <div class="glass-card auth-card">
                 <div class="logo-section">
                     <div class="logo-icon">👻</div>
                     <h1>Ghost<span>Chat</span></h1>
                 </div>
-                <p class="subtitle">Enter the phantom realm. Messages vanish like mist.</p>
+                <p style="color: var(--text-ghost); margin-bottom: 2rem; font-size: 0.9rem;">The void is listening.
+                    Leave no traces.</p>
                 <div class="form-group">
-                    <label>Phantom ID</label>
-                    <input type="text" id="acc-user" placeholder="Your spectral name">
+                    <label>Identity</label>
+                    <input type="text" id="acc-user" placeholder="Phantom Name">
                 </div>
                 <div class="form-group">
                     <label>Secret Seal</label>
                     <input type="password" id="acc-pass" placeholder="••••••••">
                 </div>
-                <div style="display: flex; gap: 12px; margin-top: 8px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <button id="login-btn" class="primary-btn">Manifest</button>
                     <button id="reg-btn" class="primary-btn"
-                        style="background: rgba(255,255,255,0.03); color: #fff; border: 1px solid rgba(255,255,255,0.1);">Register</button>
+                        style="background: rgba(255,255,255,0.05);">Register</button>
                 </div>
                 <button id="show-about"
-                    style="background:none; border:none; color:rgba(255,255,255,0.2); cursor:pointer; margin-top:24px; font-size:11px; letter-spacing:1px;">BY
+                    style="background:none; border:none; color:var(--text-ghost); margin-top: 2rem; cursor:pointer; font-size: 0.7rem; letter-spacing: 2px;">BY
                     ARYAN & JEET</button>
             </div>
         </div>
 
+        <!-- PORTAL SCREEN -->
         <div id="auth-screen" class="screen hidden">
-            <div class="glass-card ghost-card auth-card">
+            <div class="glass-card auth-card">
                 <div class="logo-section">
                     <div class="logo-icon">🔮</div>
-                    <h1>Spectral<span>Portal</span></h1>
+                    <h1>Void<span>Portal</span></h1>
                 </div>
-                <div id="pinned-rooms" style="margin-bottom: 24px; text-align: left;">
-                    <div
-                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                        <p style="font-size: 10px; font-weight: 800; color: #a78bfa; letter-spacing: 2px;">PAST ECHOES
-                        </p>
-                        <button id="clear-history"
-                            style="background:none; border:none; color:#f87171; font-size:9px; cursor:pointer; font-weight:700;">WIPE
-                            ALL</button>
-                    </div>
+                <div id="room-history" style="margin-bottom: 2rem; text-align: left;">
+                    <p
+                        style="font-size: 0.65rem; font-weight: 900; color: var(--primary); letter-spacing: 2px; margin-bottom: 0.5rem;">
+                        PAST ECHOES</p>
                     <div id="room-list" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
                 </div>
-                <div class="form-group"><label>Alias</label><input type="text" id="username" placeholder="Room handle">
-                </div>
                 <div class="form-group">
-                    <label>Avatar Soul</label>
-                    <div class="avatar-selector">
+                    <label>Handle & Soul</label>
+                    <div class="avatar-selector" style="display: flex; gap: 10px; margin-bottom: 10px;">
                         <span class="av-opt active" data-av="👻">👻</span>
                         <span class="av-opt" data-av="💀">💀</span>
                         <span class="av-opt" data-av="👽">👽</span>
                         <span class="av-opt" data-av="🎃">🎃</span>
-                        <span class="av-opt" data-av="🦇">🦇</span>
-                        <span class="av-opt" data-av="👺">👺</span>
+                    </div>
+                    <input type="text" id="username" placeholder="Join as...">
+                </div>
+                <div class="form-group">
+                    <label>Dimension Code</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="room-id" placeholder="Code" style="flex: 1;">
+                        <button id="gen-room" class="icon-btn" title="Generate Random Dimension"
+                            style="font-size: 1.5rem; background: rgba(167,139,250,0.1); border-radius: 12px; width: 50px;">🎲</button>
                     </div>
                 </div>
-                <div class="form-group"><label>Room Code</label><input type="text" id="room-id"
-                        placeholder="Dimension key"></div>
                 <div class="form-group">
                     <label>Encryption Key</label>
                     <input type="password" id="room-password" placeholder="Passphrase">
-                    <div id="pass-strength">
-                        <div id="strength-bar"></div>
+                    <div id="pass-strength"
+                        style="height: 4px; background: rgba(0,0,0,0.3); margin-top: 8px; border-radius: 2px; overflow: hidden;">
+                        <div id="strength-bar" style="height: 100%; width: 0; transition: 0.5s;"></div>
                     </div>
                 </div>
                 <button id="join-btn" class="primary-btn">Enter Dimension</button>
                 <button id="logout-btn"
-                    style="background:none; border:none; color:rgba(255,255,255,0.4); cursor:pointer; margin-top:20px; font-size:12px; font-weight: 600; text-decoration: underline;">Vanish</button>
+                    style="background:none; border:none; color:var(--danger); margin-top: 1.5rem; cursor:pointer; font-weight: 800;">VANISH</button>
             </div>
         </div>
 
+        <!-- MAIN CHAT SCREEN -->
         <div id="chat-screen" class="screen hidden">
-            <div class="chat-main glass-card ghost-workspace">
-                <aside id="sidebar" class="sidebar hidden">
+            <div class="glass-card ghost-workspace">
+                <aside id="sidebar" class="sidebar">
                     <h3>PHANTOMS</h3>
                     <div id="user-list"></div>
+
+                    <div id="admin-panel" class="admin-controls hidden">
+                        <p
+                            style="font-size: 0.65rem; font-weight: 800; color: var(--danger); letter-spacing: 2px; margin-bottom: 1rem;">
+                            ADMIN CONSOLE</p>
+                        <button id="wipe-btn" class="admin-btn">WIPE ALL ECHOES</button>
+                    </div>
                 </aside>
+
                 <div class="chat-container">
                     <header class="chat-header">
-                        <div class="room-info">
+                        <div style="display: flex; align-items: center; gap: 15px;">
                             <button id="toggle-sidebar" class="icon-btn">👤</button>
-                            <div class="status-indicator"></div>
-                            <h2 id="display-room">Void</h2>
-                            <button id="copy-info" class="icon-btn" style="margin-left: 12px;"
-                                title="Copy Room Info">📋</button>
-                            <button id="show-qr" class="icon-btn" style="margin-left: 8px;"
-                                title="Room Portal QR">🔍</button>
+                            <div class="room-info">
+                                <h2 id="display-room">Void</h2>
+                            </div>
                         </div>
-                        <div class="user-info">
-                            <span id="display-username">Incognito</span>
-                            <button id="panic-btn" class="icon-btn" style="color: #f87171;"
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <button id="copy-info" class="icon-btn" title="Copy Room Stats">📋</button>
+                            <button id="show-qr" class="icon-btn" title="Portal QR">🔍</button>
+                            <button id="panic-btn" class="icon-btn" style="color: var(--danger);"
                                 title="PANIC EXIT">☣️</button>
                         </div>
                     </header>
                     <main id="messages" class="message-area"></main>
-                    <div id="typing-area"></div>
+                    <div id="typing-area"
+                        style="padding: 0 2rem 5px; font-size: 0.75rem; color: var(--primary); height: 1.5rem; font-style: italic;">
+                    </div>
                     <footer class="chat-footer">
                         <div class="toolbar">
-                            <label for="img-input" class="icon-btn">🖼️</label>
-                            <input type="file" id="img-input" accept="image/*" style="display:none;">
+                            <label for="img-input" class="icon-btn" title="Link File">📎</label>
+                            <input type="file" id="img-input" style="display:none;">
                             <button id="emoji-btn" class="icon-btn">😊</button>
-                            <div id="emoji-picker" class="hidden">
-                                <span class="emoji-opt">👻</span><span class="emoji-opt">🔒</span><span
-                                    class="emoji-opt">🔮</span>
-                                <span class="emoji-opt">✨</span><span class="emoji-opt">💀</span><span
-                                    class="emoji-opt">🔥</span>
-                                <span class="emoji-opt">💬</span><span class="emoji-opt">⌛</span><span
-                                    class="emoji-opt">👽</span>
-                            </div>
-                            <button id="destruct-toggle" class="icon-btn">⏳</button>
+                            <button id="destruct-toggle" class="icon-btn" title="Vanish Timer">⌛</button>
+                        </div>
+                        <div id="emoji-picker" class="glass-card hidden">
+                            <span class="emoji-opt">👻</span><span class="emoji-opt">💀</span><span
+                                class="emoji-opt">🧿</span><span class="emoji-opt">🔮</span>
+                            <span class="emoji-opt">✨</span><span class="emoji-opt">🔥</span><span
+                                class="emoji-opt">🌙</span><span class="emoji-opt">🛸</span>
                         </div>
                         <form id="message-form">
                             <input type="text" id="message-input" placeholder="Whisper to the void..."
@@ -140,27 +147,28 @@
         </div>
     </div>
 
-    <!-- About Modal -->
+    <!-- ABOUT MODAL -->
     <div id="about-modal" class="modal hidden">
         <div class="modal-content glass-card">
-            <h2 style="color: var(--primary); margin-bottom: 15px;">GhostChat v2.0</h2>
-            <p style="font-size: 14px; line-height: 1.6; color: var(--text-main);">
-                A state-of-the-art secure transmission protocol designed for total ephemerality.
-                Messages are never stored on the server and vanish from existence after 30 seconds.
+            <h2 style="color: var(--primary); margin-bottom: 1rem;">GhostChat v2.5</h2>
+            <p style="font-size: 0.9rem; line-height: 1.6; color: var(--text-ghost);">
+                Elite ephemeral messaging. End-to-end AES-256 encryption. Automatically self-destructing data packets.
             </p>
-            <div style="margin-top: 25px; border-top: 1px solid var(--glass-border); padding-top: 15px;">
-                <p style="font-size: 11px; letter-spacing: 2px; color: var(--text-dim);">ARCHITECTS</p>
-                <p style="font-size: 18px; font-weight: 800; margin-top: 10px;">Aryan Yadav & Jeet Shah</p>
+            <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--glass-border);">
+                <p style="font-size: 0.6rem; letter-spacing: 2px; color: var(--primary);">ENGINEERS</p>
+                <p style="font-weight: 900; margin-top: 5px; font-size: 1.2rem;">Aryan & Jeet</p>
             </div>
-            <button id="close-about" class="primary-btn" style="margin-top: 30px;">Dismiss</button>
+            <button id="close-about" class="primary-btn" style="margin-top: 2rem;">Dismiss</button>
         </div>
     </div>
 
+    <!-- QR MODAL -->
     <div id="qr-modal" class="modal hidden">
         <div class="modal-content glass-card">
-            <h3>Portal QR</h3>
-            <div id="qrcode"></div>
-            <button id="close-qr" class="primary-btn">Dismiss</button>
+            <h3 style="margin-bottom: 1rem;">Portal Bridge</h3>
+            <div id="qrcode" style="background: white; padding: 15px; border-radius: 12px; display: inline-block;">
+            </div>
+            <button id="close-qr" class="primary-btn" style="margin-top: 1.5rem;">Close Bridge</button>
         </div>
     </div>
 
