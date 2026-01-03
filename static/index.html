@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GhostChat | Spectral Messaging</title>
+    <title>GhostChat | Multi-Dimension Messaging</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#a78bfa">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -41,7 +41,7 @@
             </div>
         </div>
 
-        <!-- DIMENSION SELECTOR -->
+        <!-- DIMENSION PORTAL (MULTI-JOIN) -->
         <div id="auth-screen" class="screen hidden">
             <div class="glass-card auth-card">
                 <div class="logo-section">
@@ -54,14 +54,14 @@
                     <div id="room-list" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
                 </div>
                 <div class="form-group">
-                    <label>Ghost Name</label>
+                    <label>Ghost Handle</label>
                     <div class="avatar-selector" style="display: flex; gap: 10px; margin-bottom: 15px;">
                         <span class="av-opt active" data-av="👻">👻</span>
                         <span class="av-opt" data-av="💀">💀</span>
                         <span class="av-opt" data-av="🧿">🧿</span>
                         <span class="av-opt" data-av="🔮">🔮</span>
                     </div>
-                    <input type="text" id="username" placeholder="Spectral Handle">
+                    <input type="text" id="username" placeholder="Spectral Name">
                 </div>
                 <div class="form-group">
                     <label>Dimension ID</label>
@@ -80,7 +80,11 @@
                             style="height: 100%; width: 0; transition: 0.8s cubic-bezier(0.16, 1, 0.3, 1);"></div>
                     </div>
                 </div>
-                <button id="join-btn" class="primary-btn">Enter Dimension</button>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <button id="join-btn" class="primary-btn">Enter Void</button>
+                    <button id="goto-chat" class="primary-btn"
+                        style="background: rgba(255,255,255,0.05); box-shadow: none;">Resume All</button>
+                </div>
                 <button id="logout-btn"
                     style="background:none; border:none; color:var(--danger); margin-top: 1.5rem; cursor:pointer; font-weight: 800; font-size: 0.8rem;">DISCONNECT</button>
             </div>
@@ -90,8 +94,14 @@
         <div id="chat-screen" class="screen hidden">
             <div class="glass-card ghost-workspace">
                 <aside id="sidebar" class="sidebar">
-                    <h3>PHANTOMS</h3>
-                    <div id="user-list"></div>
+                    <h3>DIMENSIONS</h3>
+                    <div id="active-rooms-tabs"
+                        style="margin-bottom: 2rem; display: flex; flex-direction: column; gap: 5px;"></div>
+
+                    <div id="room-meta" style="margin-top: 2rem;">
+                        <h3 style="color: var(--text-ghost); font-size: 0.65rem;">PHANTOMS</h3>
+                        <div id="user-list"></div>
+                    </div>
 
                     <div id="admin-panel" class="admin-controls hidden"
                         style="margin-top: auto; padding-top: 2rem; border-top: 1px solid var(--glass-border);">
@@ -103,6 +113,8 @@
                             PORTAL</button>
                         <button id="wipe-btn" class="admin-btn">WIPE ECHOES</button>
                     </div>
+                    <button id="add-dimension" class="primary-btn"
+                        style="margin-top: 1rem; font-size: 0.7rem; padding: 12px;">+ NEW PORTAL</button>
                 </aside>
 
                 <div class="chat-container">
@@ -110,7 +122,7 @@
                         <div style="display: flex; align-items: center; gap: 20px;">
                             <button id="toggle-sidebar" class="icon-btn">👤</button>
                             <div class="room-info">
-                                <h2 id="display-room">Secret Dimension</h2>
+                                <h2 id="display-room">Void</h2>
                             </div>
                         </div>
                         <div style="display: flex; align-items: center; gap: 15px;">
@@ -120,7 +132,11 @@
                                 title="PANIC ERASE">☢️</button>
                         </div>
                     </header>
-                    <main id="messages" class="message-area"></main>
+                    <!-- MULTI-CHAT-AREA CONTAINER -->
+                    <div id="message-containers"
+                        style="flex: 1; display: flex; flex-direction: column; position: relative; overflow: hidden;">
+                    </div>
+
                     <div id="typing-area"
                         style="padding: 0 3rem 10px; font-size: 0.8rem; color: var(--primary); font-style: italic; height: 1.5rem;">
                     </div>
@@ -131,8 +147,7 @@
                             <button id="emoji-btn" class="icon-btn">😊</button>
                             <button id="destruct-toggle" class="icon-btn" title="Vanish Timer">⌛</button>
                         </div>
-                        <div id="emoji-picker" class="glass-card hidden"
-                            style="position: absolute; bottom: 120px; left: 3rem; padding: 15px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; z-index: 100;">
+                        <div id="emoji-picker" class="glass-card hidden">
                             <span class="emoji-opt">👻</span><span class="emoji-opt">💀</span><span
                                 class="emoji-opt">🔮</span><span class="emoji-opt">🧿</span>
                             <span class="emoji-opt">✨</span><span class="emoji-opt">🔥</span><span
