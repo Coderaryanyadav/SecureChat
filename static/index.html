@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GhostChat | Multi-Dimension Messaging</title>
+    <title>GhostChat Prime | Elite Ephemeral Network</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#a78bfa">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -15,6 +15,17 @@
 
 <body>
     <div id="toast-container"></div>
+
+    <!-- GHOST GUIDE (Onboarding) -->
+    <div id="ghost-guide" class="modal hidden">
+        <div class="modal-content glass-card">
+            <h2 id="guide-title" style="color: var(--primary); margin-bottom: 1rem;">Ghost Protocol Initialized</h2>
+            <p id="guide-text"
+                style="font-size: 0.95rem; line-height: 1.6; color: var(--text-ghost); margin-bottom: 2rem;">...</p>
+            <button id="guide-next" class="primary-btn">Acknowledge</button>
+        </div>
+    </div>
+
     <div id="app">
         <!-- AUTH SCREEN -->
         <div id="user-screen" class="screen">
@@ -22,13 +33,29 @@
                 <div class="logo-section">
                     <h1>Ghost<span>Chat</span></h1>
                 </div>
-                <p class="subtitle">Spectral transmissions. No echoes.</p>
+                <p class="subtitle">Zero-Knowledge Secure Manifestation</p>
+
+                <div id="web3-gate" style="margin-bottom: 2rem;">
+                    <button id="metamask-login" class="primary-btn"
+                        style="background: linear-gradient(135deg, #f6851b, #e2761b); margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" width="24"
+                            height="24"> Connect Wallet
+                    </button>
+                    <div style="display: flex; align-items: center; margin-bottom: 1.5rem;">
+                        <hr style="flex: 1; opacity: 0.1;">
+                        <span style="padding: 0 15px; font-size: 0.7rem; color: var(--text-ghost);">OR SPIRIT
+                            IDENTITY</span>
+                        <hr style="flex: 1; opacity: 0.1;">
+                    </div>
+                </div>
+
                 <div class="form-group">
-                    <label>Identity</label>
-                    <input type="text" id="acc-user" placeholder="Your Alias">
+                    <label>Identity <span class="help-circle" title="Your unique shadow alias">?</span></label>
+                    <input type="text" id="acc-user" placeholder="PhantomID">
                 </div>
                 <div class="form-group">
-                    <label>Secret Key</label>
+                    <label>Master Seal <span class="help-circle"
+                            title="Used to derive your Zero-Knowledge proof. We never store this.">?</span></label>
                     <input type="password" id="acc-pass" placeholder="••••••••">
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
@@ -36,70 +63,83 @@
                     <button id="reg-btn" class="primary-btn"
                         style="background: rgba(255,255,255,0.05); box-shadow: none;">Register</button>
                 </div>
-                <p style="margin-top: 2rem; font-size: 0.7rem; color: var(--text-ghost); letter-spacing: 2px;">
-                    HAND-FORGED BY ARYAN & JEET</p>
             </div>
         </div>
 
-        <!-- DIMENSION PORTAL (MULTI-JOIN) -->
+        <!-- DIMENSION SELECTOR -->
         <div id="auth-screen" class="screen hidden">
             <div class="glass-card auth-card">
                 <div class="logo-section">
                     <h1>Void<span>Portal</span></h1>
                 </div>
-                <div id="room-history" style="margin-bottom: 2rem; text-align: left;">
+
+                <div id="room-history" class="hidden" style="margin-bottom: 2rem; text-align: left;">
                     <p
                         style="font-size: 0.65rem; font-weight: 800; color: var(--primary); letter-spacing: 2px; margin-bottom: 1rem;">
-                        PAST ECHOES</p>
+                        PAST DIMENSIONS</p>
                     <div id="room-list" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
                 </div>
+
                 <div class="form-group">
-                    <label>Ghost Handle</label>
+                    <label>Manifest as <span class="help-circle" title="Your appearance in this room">?</span></label>
                     <div class="avatar-selector" style="display: flex; gap: 10px; margin-bottom: 15px;">
                         <span class="av-opt active" data-av="👻">👻</span>
                         <span class="av-opt" data-av="💀">💀</span>
                         <span class="av-opt" data-av="🧿">🧿</span>
                         <span class="av-opt" data-av="🔮">🔮</span>
                     </div>
-                    <input type="text" id="username" placeholder="Spectral Name">
+                    <input type="text" id="username" placeholder="Spectral Handle">
                 </div>
+
                 <div class="form-group">
-                    <label>Dimension ID</label>
+                    <label>Dimension ID <span class="help-circle"
+                            title="Enter an existing Code or make a new one">?</span></label>
                     <div style="display: flex; gap: 10px;">
-                        <input type="text" id="room-id" placeholder="Room ID" style="flex: 1;">
-                        <button id="gen-room" class="icon-btn"
-                            style="background: rgba(167,139,250,0.1); border-radius: 12px; width: 50px;">🎲</button>
+                        <input type="text" id="room-id" placeholder="Code (e.g. void-99X)" style="flex: 1;">
+                        <button id="gen-room" class="icon-btn" title="Randomize"
+                            style="background: rgba(167,139,250,0.15); border-radius: 12px; width: 50px;">🎲</button>
                     </div>
                 </div>
+
                 <div class="form-group">
-                    <label>Encryption Seal</label>
-                    <input type="password" id="room-password" placeholder="Keyphrase">
+                    <label>Encryption Seal <span class="help-circle"
+                            title="Quantum Guard: This key stays in RAM. It never touches our network.">?</span></label>
+                    <input type="password" id="room-password" placeholder="Passphrase for this room">
                     <div id="pass-strength"
-                        style="height: 4px; background: rgba(0,0,0,0.2); margin-top: 10px; border-radius: 2px; overflow: hidden;">
-                        <div id="strength-bar"
-                            style="height: 100%; width: 0; transition: 0.8s cubic-bezier(0.16, 1, 0.3, 1);"></div>
+                        style="height: 4px; background: rgba(0,0,0,0.15); margin-top: 10px; border-radius: 2px; overflow: hidden;">
+                        <div id="strength-bar" style="height: 100%; width: 0; transition: 0.6s ease;"></div>
                     </div>
                 </div>
+
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <button id="join-btn" class="primary-btn">Enter Void</button>
-                    <button id="goto-chat" class="primary-btn"
-                        style="background: rgba(255,255,255,0.05); box-shadow: none;">Resume All</button>
+                    <button id="join-btn" class="primary-btn">Phase In</button>
+                    <button id="goto-chat" class="primary-btn hidden"
+                        style="background: rgba(255,255,255,0.05); box-shadow: none;">Active Voids</button>
                 </div>
                 <button id="logout-btn"
-                    style="background:none; border:none; color:var(--danger); margin-top: 1.5rem; cursor:pointer; font-weight: 800; font-size: 0.8rem;">DISCONNECT</button>
+                    style="background:none; border:none; color:var(--danger); margin-top: 2rem; cursor:pointer; font-weight: 800; font-size: 0.75rem;">SEVER
+                    ALL CONNECTIONS</button>
             </div>
         </div>
 
         <!-- CHAT WORKSPACE -->
         <div id="chat-screen" class="screen hidden">
             <div class="glass-card ghost-workspace">
-                <aside id="sidebar" class="sidebar">
-                    <h3>DIMENSIONS</h3>
-                    <div id="active-rooms-tabs"
-                        style="margin-bottom: 2rem; display: flex; flex-direction: column; gap: 5px;"></div>
+                <!-- DRAG TARGET FOR VANISH -->
+                <div id="vanish-drop-zone" class="hidden">
+                    <div class="vanish-orbit">
+                        <span>DIVERT TO OBLIVION</span>
+                        <div class="black-hole"></div>
+                    </div>
+                </div>
 
-                    <div id="room-meta" style="margin-top: 2rem;">
-                        <h3 style="color: var(--text-ghost); font-size: 0.65rem;">PHANTOMS</h3>
+                <aside id="sidebar" class="sidebar">
+                    <h3>ACTIVE VOIDS</h3>
+                    <div id="active-rooms-tabs"
+                        style="margin-bottom: 2rem; display: flex; flex-direction: column; gap: 15px;"></div>
+
+                    <div id="room-meta">
+                        <h3 style="color: var(--text-ghost); font-size: 0.65rem;">CONNECTED SPIRITS</h3>
                         <div id="user-list"></div>
                     </div>
 
@@ -107,14 +147,14 @@
                         style="margin-top: auto; padding-top: 2rem; border-top: 1px solid var(--glass-border);">
                         <p
                             style="font-size: 0.65rem; font-weight: 800; color: var(--danger); letter-spacing: 2px; margin-bottom: 1.5rem;">
-                            VOID CONTROL</p>
+                            GUARDIAN OVERRIDE</p>
                         <button id="lock-btn" class="admin-btn"
-                            style="background: rgba(167,139,250,0.1); color: var(--primary); border-color: var(--primary-glow); margin-bottom: 10px;">LOCK
+                            style="background: rgba(167,139,250,0.1); color: var(--primary); border: 1px solid var(--primary-glow); margin-bottom: 15px;">LOCK
                             PORTAL</button>
-                        <button id="wipe-btn" class="admin-btn">WIPE ECHOES</button>
+                        <button id="wipe-btn" class="admin-btn">WIPE ALL ECHOES</button>
                     </div>
                     <button id="add-dimension" class="primary-btn"
-                        style="margin-top: 1rem; font-size: 0.7rem; padding: 12px;">+ NEW PORTAL</button>
+                        style="margin-top: 1.5rem; font-size: 0.75rem; padding: 14px;">+ NEW PORTAL</button>
                 </aside>
 
                 <div class="chat-container">
@@ -122,39 +162,60 @@
                         <div style="display: flex; align-items: center; gap: 20px;">
                             <button id="toggle-sidebar" class="icon-btn">👤</button>
                             <div class="room-info">
-                                <h2 id="display-room">Void</h2>
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <h2 id="display-room">Void</h2>
+                                    <span class="security-tag" title="Standard AES-256 + PFS Ratchet">PROTECTED</span>
+                                </div>
                             </div>
                         </div>
-                        <div style="display: flex; align-items: center; gap: 15px;">
-                            <button id="copy-info" class="icon-btn" title="Copy Invitation">📋</button>
+                        <div style="display: flex; align-items: center; gap: 20px;">
+                            <div id="connection-status" class="status-dot"></div>
+                            <button id="copy-info" class="icon-btn" title="Copy Bridge Fragment">📋</button>
                             <button id="show-qr" class="icon-btn" title="Bridge QR">🔍</button>
                             <button id="panic-btn" class="icon-btn" style="color: var(--danger);"
-                                title="PANIC ERASE">☢️</button>
+                                title="SUDDEN VOID">☢️</button>
                         </div>
                     </header>
-                    <!-- MULTI-CHAT-AREA CONTAINER -->
+
                     <div id="message-containers"
-                        style="flex: 1; display: flex; flex-direction: column; position: relative; overflow: hidden;">
+                        style="flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative;">
                     </div>
 
-                    <div id="typing-area"
-                        style="padding: 0 3rem 10px; font-size: 0.8rem; color: var(--primary); font-style: italic; height: 1.5rem;">
+                    <div id="typing-area"></div>
+
+                    <!-- VOICE RECORDING UI -->
+                    <div id="voice-overlay" class="hidden">
+                        <div class="voice-wave">
+                            <div class="bar"></div>
+                            <div class="bar"></div>
+                            <div class="bar"></div>
+                            <div class="bar"></div>
+                            <div class="bar"></div>
+                        </div>
+                        <span id="voice-timer">00:00</span>
+                        <div style="display: flex; gap: 20px;">
+                            <button id="cancel-voice" class="icon-btn" style="color: var(--danger);">✕</button>
+                            <button id="stop-voice" class="icon-btn" style="color: var(--success);">✓</button>
+                        </div>
                     </div>
+
                     <footer class="chat-footer">
-                        <div class="toolbar" style="display: flex; gap: 20px; margin-bottom: 15px;">
-                            <label for="img-input" class="icon-btn" title="Spectral File">📎</label>
+                        <div class="toolbar">
+                            <label for="img-input" class="icon-btn" title="Ghost File">📎</label>
                             <input type="file" id="img-input" style="display:none;">
+                            <button id="voice-btn" class="icon-btn" title="Voice Fragment">🎤</button>
                             <button id="emoji-btn" class="icon-btn">😊</button>
                             <button id="destruct-toggle" class="icon-btn" title="Vanish Timer">⌛</button>
+                            <div id="vanish-indicator" class="hidden">VANISH ACTIVE</div>
                         </div>
                         <div id="emoji-picker" class="glass-card hidden">
                             <span class="emoji-opt">👻</span><span class="emoji-opt">💀</span><span
-                                class="emoji-opt">🔮</span><span class="emoji-opt">🧿</span>
-                            <span class="emoji-opt">✨</span><span class="emoji-opt">🔥</span><span
-                                class="emoji-opt">🌙</span><span class="emoji-opt">🛸</span>
+                                class="emoji-opt">🧿</span><span class="emoji-opt">🔮</span>
+                            <span class="emoji-opt">✨</span><span class="emoji-opt">🌀</span><span
+                                class="emoji-opt">🔥</span><span class="emoji-opt">🌙</span>
                         </div>
                         <form id="message-form">
-                            <input type="text" id="message-input" placeholder="Whisper into the void..."
+                            <input type="text" id="message-input" placeholder="Type into the void..."
                                 autocomplete="off">
                             <button type="submit" id="send-btn">✦</button>
                         </form>
@@ -164,19 +225,23 @@
         </div>
     </div>
 
-    <!-- QR MODAL -->
+    <!-- QR MODAL WITH QUICK JOIN -->
     <div id="qr-modal" class="modal hidden">
         <div class="modal-content glass-card">
-            <h3 style="margin-bottom: 1.5rem; font-weight: 900;">Bridge Portal</h3>
-            <div id="qrcode" style="background: white; padding: 20px; border-radius: 20px; display: inline-block;">
+            <h3>Bridge Fragment</h3>
+            <div id="qrcode"
+                style="background: white; padding: 25px; border-radius: 20px; display: inline-block; margin: 20px 0;">
             </div>
-            <button id="close-qr" class="primary-btn" style="margin-top: 2rem;">Sever Bridge</button>
+            <p style="font-size: 0.8rem; color: var(--text-ghost); margin-bottom: 2rem;">Scan this specialized fragment
+                to bridge other spirits into this dimension automatically.</p>
+            <button id="close-qr" class="primary-btn">Sever Bridge</button>
         </div>
     </div>
 
     <audio id="woosh-sound" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3"
         preload="auto"></audio>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
     <script src="script.js"></script>
 </body>
 

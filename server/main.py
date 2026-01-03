@@ -4,17 +4,22 @@ import sqlite3
 import asyncio
 import uuid
 import bcrypt
+import logging
 from datetime import datetime
-from typing import Dict, List
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
+from typing import Dict, List, Optional, Set
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
+# NASA-Grade Logging Configuration
+logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+logger = logging.getLogger("GhostOracle")
+
 limiter = Limiter(key_func=get_remote_address)
-app = FastAPI()
+app = FastAPI(title="GhostChat Oracle Prime")
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
@@ -26,214 +31,156 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-def hash_password(password: str) -> str:
-    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+# --- FINTECH-GRADE SECURITY ---
+def hash_password(p: str) -> str:
+    return bcrypt.hashpw(p.encode('utf-8'), bcrypt.gensalt(12)).decode('utf-8')
 
-def verify_password(password: str, hashed: str) -> bool:
-    try:
-        return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
-    except:
-        return False
+def verify_password(p: str, h: str) -> bool:
+    try: return bcrypt.checkpw(p.encode('utf-8'), h.encode('utf-8'))
+    except: return False
 
 def get_db():
-    db = sqlite3.connect("database.db")
+    db = sqlite3.connect("database.db", check_same_thread=False)
+    db.execute("PRAGMA journal_mode=WAL")
     db.row_factory = sqlite3.Row
     return db
 
 def init_db():
-    db = get_db()
-    db.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, username TEXT UNIQUE, password TEXT)")
-    db.execute("CREATE TABLE IF NOT EXISTS history (user_id INTEGER, room_id TEXT, UNIQUE(user_id, room_id))")
-    db.commit()
+    with get_db() as db:
+        db.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)")
+        db.execute("CREATE TABLE IF NOT EXISTS history (user_id INTEGER, room_id TEXT, joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, UNIQUE(user_id, room_id))")
+        db.commit()
 
 init_db()
 
-class ChatHandler:
+# --- DIMENSION ORCHESTRATOR ---
+class GhostDimension:
+    def __init__(self, room_id: str, password: str, admin: str):
+        self.room_id = room_id
+        self.password = password
+        self.admin = admin
+        self.locked = False
+        self.connections: Dict[WebSocket, str] = {}
+
+class DimensionRegistry:
     def __init__(self):
-        self.active_rooms = {}
-        self.room_passwords = {}
-        self.room_admins = {}
-        self.locked_rooms = set()
+        self.rooms: Dict[str, GhostDimension] = {}
 
-    def check_room(self, room_id, password):
-        if room_id not in self.room_passwords:
-            self.room_passwords[room_id] = password
-            return True
-        return self.room_passwords[room_id] == password
+    async def broadcast(self, room_id: str, data: dict, exclude: Optional[WebSocket] = None):
+        if room_id in self.rooms:
+            room = self.rooms[room_id]
+            for ws in list(room.connections.keys()):
+                if ws == exclude: continue
+                try: await ws.send_json(data)
+                except: await self.leave(ws, room_id)
 
-    async def join_room(self, websocket, room_id, username, password):
-        if not self.check_room(room_id, password):
-            await websocket.accept()
-            await websocket.send_json({"type": "error", "message": "Incorrect Password!"})
-            await websocket.close()
+    async def join(self, ws: WebSocket, rid: str, user: str, pwd: str) -> bool:
+        room = self.rooms.get(rid)
+        if room and (room.locked or room.password != pwd):
+            msg = "Dimension Sealed" if room.locked else "Incorrect Seal"
+            await ws.send_json({"type": "error", "message": msg})
             return False
-
-        if room_id in self.locked_rooms:
-            await websocket.accept()
-            await websocket.send_json({"type": "error", "message": "Portal is locked by Admin!"})
-            await websocket.close()
+        if not room:
+            room = self.rooms[rid] = GhostDimension(rid, pwd, user)
+        if any(u == user for u in room.connections.values()):
+            await ws.send_json({"type": "error", "message": "Handle already manifest"})
             return False
-
-        await websocket.accept()
         
-        if room_id not in self.active_rooms:
-            self.active_rooms[room_id] = {}
-            self.room_admins[room_id] = username
-        
-        if any(name == username for name in self.active_rooms[room_id].values()):
-            await websocket.send_json({"type": "error", "message": "This name is already used!"})
-            await websocket.close()
-            return False
-
-        self.active_rooms[room_id][websocket] = username
-        
-        await self.broadcast_user_list(room_id)
-        current_admin = self.room_admins[room_id]
-        await self.send_to_all(room_id, {
-            "type": "system",
-            "content": f"{username} joined. Admin is {current_admin}",
-            "timestamp": datetime.now().isoformat()
-        })
+        room.connections[ws] = user
+        await self.broadcast_user_list(rid)
+        await self.broadcast(rid, {"type": "system", "content": f"{user} manifest. Guardian: {room.admin}"})
         return True
 
-    async def broadcast_user_list(self, room_id):
-        if room_id in self.active_rooms:
-            users = list(self.active_rooms[room_id].values())
-            await self.send_to_all(room_id, {
-                "type": "user_list", 
-                "users": users, 
-                "admin": self.room_admins.get(room_id),
-                "is_locked": room_id in self.locked_rooms
-            })
+    async def leave(self, ws: WebSocket, rid: str):
+        if rid in self.rooms:
+            room = self.rooms[rid]
+            if ws in room.connections:
+                user = room.connections.pop(ws)
+                if not room.connections: self.rooms.pop(rid)
+                else:
+                    if user == room.admin:
+                        room.admin = next(iter(room.connections.values()))
+                    await self.broadcast_user_list(rid)
+                    await self.broadcast(rid, {"type": "system", "content": f"{user} vanished."})
 
-    def leave_room(self, websocket, room_id):
-        name = None
-        if room_id in self.active_rooms:
-            if websocket in self.active_rooms[room_id]:
-                name = self.active_rooms[room_id].pop(websocket)
-                if not self.active_rooms[room_id]:
-                    # Room empty, cleanup
-                    self.active_rooms.pop(room_id)
-                    self.room_passwords.pop(room_id)
-                    self.room_admins.pop(room_id)
-                    if room_id in self.locked_rooms:
-                        self.locked_rooms.remove(room_id)
-                elif name == self.room_admins.get(room_id):
-                    # Admin left, reassign to next person
-                    first_socket = next(iter(self.active_rooms[room_id]))
-                    new_admin = self.active_rooms[room_id][first_socket]
-                    self.room_admins[room_id] = new_admin
-        return name
+    async def broadcast_user_list(self, rid: str):
+        if rid in self.rooms:
+            room = self.rooms[rid]
+            await self.broadcast(rid, {"type": "user_list", "users": list(room.connections.values()), "admin": room.admin, "is_locked": room.locked})
 
-    async def send_to_all(self, room_id, data):
-        if room_id in self.active_rooms:
-            for socket in list(self.active_rooms[room_id].keys()):
-                try:
-                    await socket.send_json(data)
-                except:
-                    self.leave_room(socket, room_id)
+registry = DimensionRegistry()
 
-chat_manager = ChatHandler()
-
+# --- API ---
 @app.post("/api/register")
 @limiter.limit("5/minute")
-async def register(request: Request, data: dict):
-    user, pwd = data.get("username"), data.get("password")
-    if not user or not pwd: return {"status": "fail", "msg": "Missing data"}
-    db = get_db()
-    try:
-        if db.execute("SELECT * FROM users WHERE username = ?", (user,)).fetchone():
-            return {"status": "fail", "msg": "User already exists"}
-        hashed = hash_password(pwd)
-        db.execute("INSERT INTO users (username, password) VALUES (?, ?)", (user, hashed))
+async def register(r: Request, d: dict):
+    u, p = d.get("username"), d.get("password")
+    if not u or not p: return {"status": "fail", "msg": "Incomplete data"}
+    with get_db() as db:
+        if db.execute("SELECT 1 FROM users WHERE username = ?", (u,)).fetchone(): return {"status": "fail", "msg": "ID taken"}
+        db.execute("INSERT INTO users (username, password) VALUES (?, ?)", (u, hash_password(p)))
         db.commit()
-        return {"status": "ok"}
-    except Exception as e:
-        return {"status": "fail", "msg": f"Reg error: {e}"}
+    return {"status": "ok"}
 
 @app.post("/api/login")
 @limiter.limit("10/minute")
-async def login(request: Request, data: dict):
-    user, pwd = data.get("username"), data.get("password")
-    db = get_db()
-    try:
-        res = db.execute("SELECT * FROM users WHERE username = ?", (user,)).fetchone()
-        if res and verify_password(pwd, res['password']):
-            return {"status": "ok", "user_id": res['id']}
-        return {"status": "fail", "msg": "Invalid credentials"}
-    except Exception as e:
-        return {"status": "fail", "msg": f"Login error: {e}"}
+async def login(r: Request, d: dict):
+    u, p = d.get("username"), d.get("password")
+    with get_db() as db:
+        res = db.execute("SELECT * FROM users WHERE username = ?", (u,)).fetchone()
+        if res and verify_password(p, res['password']): return {"status": "ok", "user_id": res['id']}
+    return {"status": "fail", "msg": "Auth failure"}
 
 @app.post("/api/save-room")
-async def save_room(data: dict):
-    uid, rid = data.get("user_id"), data.get("room_id")
-    db = get_db()
-    db.execute("INSERT OR IGNORE INTO history (user_id, room_id) VALUES (?, ?)", (uid, rid))
-    db.commit()
+async def save_room(d: dict):
+    with get_db() as db:
+        db.execute("INSERT OR IGNORE INTO history (user_id, room_id) VALUES (?, ?)", (d.get("user_id"), d.get("room_id")))
+        db.commit()
     return {"status": "ok"}
 
-@app.get("/api/history/{user_id}")
-async def get_history(user_id: int):
-    db = get_db()
-    res = db.execute("SELECT room_id FROM history WHERE user_id = ?", (user_id,)).fetchall()
-    return [r['room_id'] for r in res]
+@app.get("/api/history/{uid}")
+async def get_history(uid: int):
+    with get_db() as db:
+        res = db.execute("SELECT room_id FROM history WHERE user_id = ?", (uid,)).fetchall()
+        return [r['room_id'] for r in res]
 
 @app.post("/api/verify-room")
-async def verify(data: dict):
-    rid, pwd = data.get("room_id"), data.get("password")
-    if chat_manager.check_room(rid, pwd): return {"status": "ok"}
-    return {"status": "fail", "msg": "Incorrect password for this room."}
+async def verify_room(d: dict):
+    room = registry.rooms.get(d.get("room_id"))
+    if not room or room.password == d.get("password"): return {"status": "ok"}
+    return {"status": "fail", "msg": "Incorrect seal"}
 
-async def schedule_destruct(room_id, msg_id):
+# --- SOCKET ---
+async def destruct(rid, mid):
     await asyncio.sleep(30)
-    await chat_manager.send_to_all(room_id, {"type": "delete_msg", "id": msg_id})
+    await registry.broadcast(rid, {"type": "delete_msg", "id": mid})
 
-@app.websocket("/ws/{room_id}/{username}")
-async def socket_endpoint(websocket: WebSocket, room_id: str, username: str, pwd: str = ""):
-    if await chat_manager.join_room(websocket, room_id, username, pwd):
-        try:
-            while True:
-                data = await websocket.receive_json()
-                m_type = data.get("type", "message")
-                is_admin = (username == chat_manager.room_admins.get(room_id))
-                
-                if m_type == "typing":
-                    await chat_manager.send_to_all(room_id, {"type": "typing", "username": username, "status": data.get("status")})
-                elif m_type == "kick" and is_admin:
-                    target = data.get("target")
-                    await chat_manager.send_to_all(room_id, {"type": "kicked", "target": target})
-                elif m_type == "wipe" and is_admin:
-                    await chat_manager.send_to_all(room_id, {"type": "wipe_all"})
-                elif m_type == "lock" and is_admin:
-                    chat_manager.locked_rooms.add(room_id)
-                    await chat_manager.broadcast_user_list(room_id)
-                    await chat_manager.send_to_all(room_id, {"type": "system", "content": "Portal LOCKED by Admin"})
-                elif m_type == "unlock" and is_admin:
-                    if room_id in chat_manager.locked_rooms:
-                        chat_manager.locked_rooms.remove(room_id)
-                    await chat_manager.broadcast_user_list(room_id)
-                    await chat_manager.send_to_all(room_id, {"type": "system", "content": "Portal UNLOCKED by Admin"})
-                elif m_type == "reaction":
-                    await chat_manager.send_to_all(room_id, data)
-                else:
-                    msg_id = str(uuid.uuid4())
-                    msg_obj = {
-                        "type": m_type, "id": msg_id, "username": username,
-                        "content": data.get("content", ""), "timestamp": datetime.now().isoformat(),
-                        "self_destruct": data.get("self_destruct", False)
-                    }
-                    await chat_manager.send_to_all(room_id, msg_obj)
-                    if data.get("self_destruct"): asyncio.create_task(schedule_destruct(room_id, msg_id))
-        except WebSocketDisconnect:
-            user = chat_manager.leave_room(websocket, room_id)
-            if user:
-                await chat_manager.broadcast_user_list(room_id)
-                await chat_manager.send_to_all(room_id, {"type": "system", "content": f"{user} vanished."})
-        except:
-            chat_manager.leave_room(websocket, room_id)
+@app.websocket("/ws/{rid}/{user}")
+async def websocket_endpoint(ws: WebSocket, rid: str, user: str, pwd: str = Query("")):
+    await ws.accept()
+    if not await registry.join(ws, rid, user, pwd): return
+    try:
+        while True:
+            d = await ws.receive_json()
+            t = d.get("type")
+            room = registry.rooms.get(rid)
+            is_adm = room and room.admin == user
+            
+            if t == "typing": await registry.broadcast(rid, {"type": "typing", "username": user, "status": d.get("status")}, exclude=ws)
+            elif t == "kick" and is_adm: await registry.broadcast(rid, {"type": "kicked", "target": d.get("target")})
+            elif t == "wipe" and is_adm: await registry.broadcast(rid, {"type": "wipe_all"})
+            elif t == "lock" and is_adm: room.locked = True; await registry.broadcast_user_list(rid)
+            elif t == "unlock" and is_adm: room.locked = False; await registry.broadcast_user_list(rid)
+            elif t == "delete_request": # PHASE 2: Black Hole request
+                 await registry.broadcast(rid, {"type": "delete_msg", "id": d.get("id")})
+            elif t in ["message", "image", "file", "reaction"]:
+                mid = str(uuid.uuid4())
+                d.update({"id": mid, "username": user, "timestamp": datetime.now().isoformat()})
+                await registry.broadcast(rid, d)
+                if d.get("self_destruct"): asyncio.create_task(destruct(rid, mid))
+    except: await registry.leave(ws, rid)
 
-static_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "static")
-app.mount("/", StaticFiles(directory=static_folder, html=True), name="static")
+app.mount("/", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "..", "static"), html=True), name="static")
 
 if __name__ == "__main__":
     import uvicorn
