@@ -53,6 +53,7 @@ class ChatHandler:
         self.active_rooms = {}
         self.room_passwords = {}
         self.room_admins = {}
+        self.locked_rooms = set()
 
     def check_room(self, room_id, password):
         if room_id not in self.room_passwords:
@@ -64,6 +65,12 @@ class ChatHandler:
         if not self.check_room(room_id, password):
             await websocket.accept()
             await websocket.send_json({"type": "error", "message": "Incorrect Password!"})
+            await websocket.close()
+            return False
+
+        if room_id in self.locked_rooms:
+            await websocket.accept()
+            await websocket.send_json({"type": "error", "message": "Portal is locked by Admin!"})
             await websocket.close()
             return False
 
@@ -81,9 +88,10 @@ class ChatHandler:
         self.active_rooms[room_id][websocket] = username
         
         await self.broadcast_user_list(room_id)
+        current_admin = self.room_admins[room_id]
         await self.send_to_all(room_id, {
             "type": "system",
-            "content": f"{username} joined. Admin is {self.room_admins[room_id]}",
+            "content": f"{username} joined. Admin is {current_admin}",
             "timestamp": datetime.now().isoformat()
         })
         return True
@@ -91,7 +99,12 @@ class ChatHandler:
     async def broadcast_user_list(self, room_id):
         if room_id in self.active_rooms:
             users = list(self.active_rooms[room_id].values())
-            await self.send_to_all(room_id, {"type": "user_list", "users": users, "admin": self.room_admins.get(room_id)})
+            await self.send_to_all(room_id, {
+                "type": "user_list", 
+                "users": users, 
+                "admin": self.room_admins.get(room_id),
+                "is_locked": room_id in self.locked_rooms
+            })
 
     def leave_room(self, websocket, room_id):
         name = None
@@ -99,9 +112,17 @@ class ChatHandler:
             if websocket in self.active_rooms[room_id]:
                 name = self.active_rooms[room_id].pop(websocket)
                 if not self.active_rooms[room_id]:
+                    # Room empty, cleanup
                     self.active_rooms.pop(room_id)
                     self.room_passwords.pop(room_id)
                     self.room_admins.pop(room_id)
+                    if room_id in self.locked_rooms:
+                        self.locked_rooms.remove(room_id)
+                elif name == self.room_admins.get(room_id):
+                    # Admin left, reassign to next person
+                    first_socket = next(iter(self.active_rooms[room_id]))
+                    new_admin = self.active_rooms[room_id][first_socket]
+                    self.room_admins[room_id] = new_admin
         return name
 
     async def send_to_all(self, room_id, data):
@@ -117,27 +138,23 @@ chat_manager = ChatHandler()
 @app.post("/api/register")
 @limiter.limit("5/minute")
 async def register(request: Request, data: dict):
-    user = data.get("username")
-    pwd = data.get("password")
+    user, pwd = data.get("username"), data.get("password")
     if not user or not pwd: return {"status": "fail", "msg": "Missing data"}
     db = get_db()
     try:
-        existing = db.execute("SELECT * FROM users WHERE username = ?", (user,)).fetchone()
-        if existing:
+        if db.execute("SELECT * FROM users WHERE username = ?", (user,)).fetchone():
             return {"status": "fail", "msg": "User already exists"}
         hashed = hash_password(pwd)
         db.execute("INSERT INTO users (username, password) VALUES (?, ?)", (user, hashed))
         db.commit()
         return {"status": "ok"}
     except Exception as e:
-        print(f"REG ERROR: {e}")
-        return {"status": "fail", "msg": "Spectral registration failed"}
+        return {"status": "fail", "msg": f"Reg error: {e}"}
 
 @app.post("/api/login")
 @limiter.limit("10/minute")
 async def login(request: Request, data: dict):
-    user = data.get("username")
-    pwd = data.get("password")
+    user, pwd = data.get("username"), data.get("password")
     db = get_db()
     try:
         res = db.execute("SELECT * FROM users WHERE username = ?", (user,)).fetchone()
@@ -145,8 +162,7 @@ async def login(request: Request, data: dict):
             return {"status": "ok", "user_id": res['id']}
         return {"status": "fail", "msg": "Invalid credentials"}
     except Exception as e:
-        print(f"LOGIN ERROR: {e}")
-        return {"status": "fail", "msg": "Manifestation failed"}
+        return {"status": "fail", "msg": f"Login error: {e}"}
 
 @app.post("/api/save-room")
 async def save_room(data: dict):
@@ -166,7 +182,7 @@ async def get_history(user_id: int):
 async def verify(data: dict):
     rid, pwd = data.get("room_id"), data.get("password")
     if chat_manager.check_room(rid, pwd): return {"status": "ok"}
-    return {"status": "fail", "msg": "Portal key incorrect"}
+    return {"status": "fail", "msg": "Incorrect password for this room."}
 
 async def schedule_destruct(room_id, msg_id):
     await asyncio.sleep(30)
@@ -179,16 +195,26 @@ async def socket_endpoint(websocket: WebSocket, room_id: str, username: str, pwd
             while True:
                 data = await websocket.receive_json()
                 m_type = data.get("type", "message")
+                is_admin = (username == chat_manager.room_admins.get(room_id))
                 
                 if m_type == "typing":
                     await chat_manager.send_to_all(room_id, {"type": "typing", "username": username, "status": data.get("status")})
-                elif m_type == "kick":
-                    if username == chat_manager.room_admins.get(room_id):
-                        target = data.get("target")
-                        await chat_manager.send_to_all(room_id, {"type": "kicked", "target": target})
-                elif m_type == "wipe":
-                    if username == chat_manager.room_admins.get(room_id):
-                        await chat_manager.send_to_all(room_id, {"type": "wipe_all"})
+                elif m_type == "kick" and is_admin:
+                    target = data.get("target")
+                    await chat_manager.send_to_all(room_id, {"type": "kicked", "target": target})
+                elif m_type == "wipe" and is_admin:
+                    await chat_manager.send_to_all(room_id, {"type": "wipe_all"})
+                elif m_type == "lock" and is_admin:
+                    chat_manager.locked_rooms.add(room_id)
+                    await chat_manager.broadcast_user_list(room_id)
+                    await chat_manager.send_to_all(room_id, {"type": "system", "content": "Portal LOCKED by Admin"})
+                elif m_type == "unlock" and is_admin:
+                    if room_id in chat_manager.locked_rooms:
+                        chat_manager.locked_rooms.remove(room_id)
+                    await chat_manager.broadcast_user_list(room_id)
+                    await chat_manager.send_to_all(room_id, {"type": "system", "content": "Portal UNLOCKED by Admin"})
+                elif m_type == "reaction":
+                    await chat_manager.send_to_all(room_id, data)
                 else:
                     msg_id = str(uuid.uuid4())
                     msg_obj = {
@@ -202,7 +228,7 @@ async def socket_endpoint(websocket: WebSocket, room_id: str, username: str, pwd
             user = chat_manager.leave_room(websocket, room_id)
             if user:
                 await chat_manager.broadcast_user_list(room_id)
-                await chat_manager.send_to_all(room_id, {"type": "delete_all", "username": user, "content": f"{user} vanished", "timestamp": datetime.now().isoformat()})
+                await chat_manager.send_to_all(room_id, {"type": "system", "content": f"{user} vanished."})
         except:
             chat_manager.leave_room(websocket, room_id)
 
