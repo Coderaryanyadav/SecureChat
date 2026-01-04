@@ -129,7 +129,7 @@
     - Status: No limit on reactions per message
 
 12. **Room Participant Limit**
-|   | - Status: ✅ **FIXED** - 50 phantom limit per dimension enforced
+|   - Status: ✅ **FIXED** - 50 phantom limit per dimension enforced
 
 
 ---
