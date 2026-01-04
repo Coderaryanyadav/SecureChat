@@ -4,248 +4,229 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GhostChat Prime | Elite Ephemeral Network</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#a78bfa">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <title>SecureChat - End-to-End Encrypted Messaging</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <meta name="description" content="Secure, private, end-to-end encrypted messaging">
 </head>
 
 <body>
-    <div id="toast-container"></div>
+    <!-- Login Screen -->
+    <div id="login-screen" class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h1>SecureChat</h1>
+                <p>End-to-end encrypted messaging</p>
+            </div>
 
-    <!-- GHOST GUIDE (Onboarding) -->
-    <div id="ghost-guide" class="modal hidden" role="dialog" aria-labelledby="guide-title"
-        aria-describedby="guide-text">
-        <div class="modal-content glass-card">
-            <h2 id="guide-title" style="color: var(--primary); margin-bottom: 1rem;">Ghost Protocol Initialized</h2>
-            <p id="guide-text"
-                style="font-size: 0.95rem; line-height: 1.6; color: var(--text-ghost); margin-bottom: 2rem;">...</p>
-            <button id="guide-next" class="primary-btn" aria-label="Acknowledge and continue">Acknowledge</button>
-        </div>
-    </div>
-
-    <div id="app">
-        <!-- AUTH SCREEN -->
-        <div id="user-screen" class="screen">
-            <div class="glass-card auth-card">
-                <div class="logo-section">
-                    <h1>Ghost<span>Chat</span></h1>
+            <div id="login-form">
+                <div class="form-group">
+                    <label for="login-username">Username</label>
+                    <input type="text" id="login-username" placeholder="Enter your username" autocomplete="username">
                 </div>
-                <p class="subtitle">Zero-Knowledge Secure Manifestation</p>
 
                 <div class="form-group">
-                    <label>Identity <span class="help-circle" title="Your unique shadow alias">?</span></label>
-                    <input type="text" id="acc-user" placeholder="PhantomID">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" placeholder="Enter your password"
+                        autocomplete="current-password">
                 </div>
-                <div class="form-group">
-                    <label>Master Seal <span class="help-circle"
-                            title="Used to derive your Zero-Knowledge proof. We never store this.">?</span></label>
-                    <input type="password" id="acc-pass" placeholder="••••••••">
+
+                <button id="login-btn" class="btn btn-primary">Log In</button>
+
+                <div class="link-text">
+                    Don't have an account? <a href="#" id="show-register">Sign up</a>
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <button id="login-btn" class="primary-btn"
-                        aria-label="Manifest into your identity">Manifest</button>
-                    <button id="reg-btn" class="primary-btn" aria-label="Register new shadow identity"
-                        style="background: rgba(255,255,255,0.05); box-shadow: none;">Register</button>
+
+                <div class="link-text">
+                    <a href="#" id="show-recover">Lost access?</a>
                 </div>
             </div>
-        </div>
 
-        <!-- DIMENSION SELECTOR -->
-        <div id="auth-screen" class="screen hidden">
-            <div class="glass-card auth-card">
-                <div class="logo-section">
-                    <h1>Void<span>Portal</span></h1>
-                </div>
-
-                <div id="room-history" class="hidden" style="margin-bottom: 2rem; text-align: left;">
-                    <p
-                        style="font-size: 0.65rem; font-weight: 800; color: var(--primary); letter-spacing: 2px; margin-bottom: 1rem;">
-                        PAST DIMENSIONS</p>
-                    <div id="room-list" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
+            <div id="register-form" class="hidden">
+                <div class="form-group">
+                    <label for="register-username">Choose Username</label>
+                    <input type="text" id="register-username" placeholder="Enter username" autocomplete="username">
                 </div>
 
                 <div class="form-group">
-                    <label>Manifest as <span class="help-circle" title="Your appearance in this room">?</span></label>
-                    <div class="avatar-selector" style="display: flex; gap: 10px; margin-bottom: 15px;">
-                        <span class="av-opt active" data-av="👻">👻</span>
-                        <span class="av-opt" data-av="💀">💀</span>
-                        <span class="av-opt" data-av="🧿">🧿</span>
-                        <span class="av-opt" data-av="🔮">🔮</span>
-                    </div>
+                    <label for="register-password">Choose Password</label>
+                    <input type="password" id="register-password" placeholder="Min 12 characters"
+                        autocomplete="new-password">
+                    <small style="color: var(--text-muted); font-size: 12px; margin-top: 4px; display: block;">
+                        Must include uppercase, lowercase, number & special character
+                    </small>
                 </div>
 
-                <div class="form-group">
-                    <label>Dimension ID <span class="help-circle"
-                            title="Enter an existing Code or make a new one">?</span></label>
-                    <div style="display: flex; gap: 10px;">
-                        <input type="text" id="room-id" placeholder="Code (e.g. void-99X)" style="flex: 1;"
-                            aria-label="Enter Dimension ID">
-                        <button id="gen-room" class="icon-btn" title="Randomize"
-                            aria-label="Generate random dimension code"
-                            style="background: rgba(167,139,250,0.15); border-radius: 12px; width: 50px;">🎲</button>
-                    </div>
-                </div>
+                <button id="register-btn" class="btn btn-primary">Create Account</button>
 
-                <div class="form-group">
-                    <label>Encryption Seal <span class="help-circle"
-                            title="Quantum Guard: This key stays in RAM. It never touches our network.">?</span></label>
-                    <input type="password" id="room-password" placeholder="Passphrase for this room">
-                    <div id="pass-strength"
-                        style="height: 4px; background: rgba(0,0,0,0.15); margin-top: 10px; border-radius: 2px; overflow: hidden;">
-                        <div id="strength-bar" style="height: 100%; width: 0; transition: 0.6s ease;"></div>
-                    </div>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <button id="join-btn" class="primary-btn" aria-label="Phase into dimension">Phase In</button>
-                    <button id="goto-chat" class="primary-btn hidden" aria-label="Return to active dimensions"
-                        style="background: rgba(255,255,255,0.05); box-shadow: none;">Active Voids</button>
-                </div>
-                <button id="logout-btn"
-                    style="background:none; border:none; color:var(--danger); margin-top: 2rem; cursor:pointer; font-weight: 800; font-size: 0.75rem;">SEVER
-                    ALL CONNECTIONS</button>
-            </div>
-        </div>
-
-        <!-- CHAT WORKSPACE -->
-        <div id="chat-screen" class="screen hidden">
-            <div class="glass-card ghost-workspace">
-                <!-- DRAG TARGET FOR VANISH -->
-                <div id="vanish-drop-zone" class="hidden">
-                    <div class="vanish-orbit">
-                        <span>DIVERT TO OBLIVION</span>
-                        <div class="black-hole"></div>
-                    </div>
-                </div>
-
-                <aside id="sidebar" class="sidebar">
-                    <h3>ACTIVE VOIDS</h3>
-                    <div id="active-rooms-tabs"
-                        style="margin-bottom: 2rem; display: flex; flex-direction: column; gap: 15px;"></div>
-
-                    <div id="communities" style="margin-bottom: 2rem;">
-                        <h3 style="color: var(--text-ghost); font-size: 0.65rem;">GHOST COMMUNITIES</h3>
-                        <div id="community-list"
-                            style="display: flex; flex-direction: column; gap: 10px; margin-top: 1rem;">
-                            <div class="community-item"
-                                style="font-size: 0.8rem; opacity: 0.6; padding: 10px; border: 1px dashed var(--glass-border); border-radius: 12px; text-align: center;">
-                                No local clusters found</div>
-                        </div>
-                    </div>
-
-                    <div id="room-meta">
-                        <h3 style="color: var(--text-ghost); font-size: 0.65rem;">CONNECTED SPIRITS</h3>
-                        <div id="user-list"></div>
-                    </div>
-
-                    <div id="admin-panel" class="admin-controls hidden"
-                        style="margin-top: auto; padding-top: 2rem; border-top: 1px solid var(--glass-border);">
-                        <p
-                            style="font-size: 0.65rem; font-weight: 800; color: var(--danger); letter-spacing: 2px; margin-bottom: 1.5rem;">
-                            GUARDIAN OVERRIDE</p>
-                        <button id="lock-btn" class="admin-btn"
-                            style="background: rgba(167,139,250,0.1); color: var(--primary); border: 1px solid var(--primary-glow); margin-bottom: 15px;">LOCK
-                            PORTAL</button>
-                        <button id="wipe-btn" class="admin-btn">WIPE ALL ECHOES</button>
-                    </div>
-                    <button id="add-dimension" class="primary-btn"
-                        style="margin-top: 1.5rem; font-size: 0.75rem; padding: 14px;">+ NEW PORTAL</button>
-                </aside>
-
-                <div class="chat-container">
-                    <header class="chat-header">
-                        <div style="display: flex; align-items: center; gap: 20px;">
-                            <button id="toggle-sidebar" class="icon-btn">👤</button>
-                            <div class="room-info">
-                                <div style="display: flex; align-items: center; gap: 12px;">
-                                    <h2 id="display-room">Void</h2>
-                                    <span class="security-tag" title="Standard AES-256 + PFS Ratchet">PROTECTED</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 20px;">
-                            <div id="connection-status" class="status-dot" role="status" aria-label="Connection Status">
-                            </div>
-                            <button id="copy-info" class="icon-btn" title="Copy Bridge Fragment"
-                                aria-label="Copy invitation details">📋</button>
-                            <button id="show-qr" class="icon-btn" title="Bridge QR"
-                                aria-label="Show bridge QR code">🔍</button>
-                            <button id="panic-btn" class="icon-btn" style="color: var(--danger);" title="SUDDEN VOID"
-                                aria-label="Instant disconnect and wipe local session">☢️</button>
-                        </div>
-                    </header>
-
-                    <div id="message-containers"
-                        style="flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative;">
-                    </div>
-
-                    <div id="typing-area"></div>
-
-                    <!-- VOICE RECORDING UI -->
-                    <div id="voice-overlay" class="hidden">
-                        <div class="voice-wave">
-                            <div class="bar"></div>
-                            <div class="bar"></div>
-                            <div class="bar"></div>
-                            <div class="bar"></div>
-                            <div class="bar"></div>
-                        </div>
-                        <span id="voice-timer">00:00</span>
-                        <div style="display: flex; gap: 20px;">
-                            <button id="cancel-voice" class="icon-btn" style="color: var(--danger);">✕</button>
-                            <button id="stop-voice" class="icon-btn" style="color: var(--success);">✓</button>
-                        </div>
-                    </div>
-
-                    <footer class="chat-footer">
-                        <div class="toolbar">
-                            <label for="img-input" class="icon-btn" title="Ghost File">📎</label>
-                            <input type="file" id="img-input" style="display:none;">
-                            <button id="voice-btn" class="icon-btn" title="Voice Fragment"
-                                aria-label="Record voice fragment">🎤</button>
-                            <button id="emoji-btn" class="icon-btn" aria-label="Open emoji picker">😊</button>
-                            <button id="destruct-toggle" class="icon-btn" title="Vanish Timer"
-                                aria-label="Toggle self-destruct mode">⌛</button>
-                            <div id="vanish-indicator" class="hidden" role="alert">VANISH ACTIVE</div>
-                        </div>
-                        <div id="emoji-picker" class="glass-card hidden">
-                            <span class="emoji-opt">👻</span><span class="emoji-opt">💀</span><span
-                                class="emoji-opt">🧿</span><span class="emoji-opt">🔮</span>
-                            <span class="emoji-opt">✨</span><span class="emoji-opt">🌀</span><span
-                                class="emoji-opt">🔥</span><span class="emoji-opt">🌙</span>
-                        </div>
-                        <form id="message-form" aria-label="Message composition">
-                            <input type="text" id="message-input" placeholder="Type into the void..." autocomplete="off"
-                                aria-label="Message content">
-                            <button type="submit" id="send-btn" aria-label="Send message">✦</button>
-                        </form>
-                    </footer>
+                <div class="link-text">
+                    Already have an account? <a href="#" id="show-login">Log in</a>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- QR MODAL WITH QUICK JOIN -->
-    <div id="qr-modal" class="modal hidden">
-        <div class="modal-content glass-card">
-            <h3>Bridge Fragment</h3>
-            <div id="qrcode"
-                style="background: white; padding: 25px; border-radius: 20px; display: inline-block; margin: 20px 0;">
+    <!-- Recovery Modal -->
+    <div id="recovery-modal" class="modal hidden">
+        <div class="modal-content">
+            <div id="recovery-key-display" class="hidden">
+                <h2>Save Your Recovery Key</h2>
+                <p>This is your ONLY way to recover your account if you forget your password. Save it somewhere safe!
+                </p>
+                <div class="recovery-key-box">
+                    <code id="recovery-key-text"></code>
+                </div>
+                <button id="copy-recovery-key" class="btn btn-secondary">Copy Key</button>
+                <button id="close-recovery" class="btn btn-primary">I've Saved It</button>
             </div>
-            <p style="font-size: 0.8rem; color: var(--text-ghost); margin-bottom: 2rem;">Scan this specialized fragment
-                to bridge other spirits into this dimension automatically.</p>
-            <button id="close-qr" class="primary-btn">Sever Bridge</button>
+
+            <div id="recovery-form" class="hidden">
+                <h2>Recover Account</h2>
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="recover-username">
+                </div>
+                <div class="form-group">
+                    <label>Recovery Key</label>
+                    <input type="text" id="recover-key">
+                </div>
+                <div class="form-group">
+                    <label>New Password</label>
+                    <input type="password" id="recover-password">
+                </div>
+                <button id="recover-btn" class="btn btn-primary">Recover Account</button>
+                <button id="cancel-recover" class="btn btn-secondary">Cancel</button>
+            </div>
         </div>
     </div>
 
-    <audio id="woosh-sound" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3"
-        preload="auto"></audio>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="script.js"></script>
+    <!-- Main Chat Interface -->
+    <div id="chat-screen" class="chat-layout hidden">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>Chats</h2>
+                <div class="header-actions">
+                    <button id="theme-toggle" class="icon-btn" title="Toggle theme">🌓</button>
+                    <button id="settings-btn" class="icon-btn" title="Settings">⚙️</button>
+                </div>
+            </div>
+
+            <div class="search-bar">
+                <input type="text" id="search-input" class="search-input" placeholder="Search chats...">
+            </div>
+
+            <div id="chat-list" class="chat-list">
+                <!-- Chat items will be added here dynamically -->
+            </div>
+
+            <div style="padding: 16px; border-top: 1px solid var(--border);">
+                <button id="new-chat-btn" class="btn btn-primary">New Chat</button>
+            </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="chat-area">
+            <div class="chat-header">
+                <div class="chat-header-left">
+                    <button id="back-btn" class="icon-btn">←</button>
+                    <div class="avatar" id="chat-avatar">?</div>
+                    <div class="chat-header-info">
+                        <h3 id="chat-name">Select a chat</h3>
+                        <div id="chat-status" class="chat-header-status">Offline</div>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button id="search-chat-btn" class="icon-btn" title="Search">🔍</button>
+                    <button id="chat-menu-btn" class="icon-btn" title="Menu">⋮</button>
+                </div>
+            </div>
+
+            <div id="messages-container" class="messages-container">
+                <!-- Messages will be added here -->
+            </div>
+
+            <div id="reply-preview" class="hidden"
+                style="padding: 12px 20px; background: var(--bg-primary); border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                <div style="flex: 1;">
+                    <div style="font-size: 12px; color: var(--primary); font-weight: 600; margin-bottom: 2px;">Replying
+                        to <span id="reply-to-user"></span></div>
+                    <div id="reply-preview-text"
+                        style="font-size: 13px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    </div>
+                </div>
+                <button id="cancel-reply" class="icon-btn">✕</button>
+            </div>
+
+            <div id="typing-indicator" class="hidden"
+                style="padding: 8px 20px; background: var(--bg-primary); border-top: 1px solid var(--border);">
+                <span style="font-size: 13px; color: var(--text-secondary);"><span id="typing-user"></span> is
+                    typing...</span>
+            </div>
+
+            <div class="input-area">
+                <div class="input-container">
+                    <button id="attach-btn" class="icon-btn" title="Attach file">📎</button>
+                    <input type="file" id="file-input" class="hidden" accept="image/*,video/*">
+                    <textarea id="message-input" class="input-field" placeholder="Type a message..."
+                        rows="1"></textarea>
+                    <button id="send-btn" class="send-btn" title="Send">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Chat Modal -->
+    <div id="new-chat-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Join Room</h2>
+            <div class="form-group">
+                <label>Room ID</label>
+                <input type="text" id="room-id-input" placeholder="Enter room ID">
+                <button id="generate-room-id" class="btn btn-secondary" style="margin-top: 8px;">Generate Random
+                    ID</button>
+            </div>
+            <div class="form-group">
+                <label>Room Password</label>
+                <input type="password" id="room-password-input" placeholder="Encryption password (min 8 chars)">
+            </div>
+            <button id="join-room-btn" class="btn btn-primary">Join Room</button>
+            <button id="cancel-new-chat" class="btn btn-secondary">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Settings</h2>
+            <div style="display: flex; flex-direction: column; gap: 16px; margin: 24px 0;">
+                <div>
+                    <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 8px;">Account</h3>
+                    <button id="export-data-btn" class="btn btn-secondary">Export My Data</button>
+                    <button id="delete-account-btn" class="btn"
+                        style="background: #dc2626; color: white; margin-top: 8px;">Delete Account</button>
+                </div>
+                <div>
+                    <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 8px;">About</h3>
+                    <p style="font-size: 13px; color: var(--text-secondary);">SecureChat v2.0</p>
+                    <p style="font-size: 13px; color: var(--text-secondary);">End-to-end encrypted messaging</p>
+                </div>
+            </div>
+            <button id="close-settings" class="btn btn-primary">Close</button>
+            <button id="logout-btn" class="btn btn-secondary">Log Out</button>
+        </div>
+    </div>
+
+    <div id="offline-indicator" class="hidden"
+        style="position: fixed; top: 0; left: 0; right: 0; background: #dc2626; color: white; text-align: center; padding: 8px; font-size: 13px; z-index: 1000;">
+        ⚠️ No internet connection
+    </div>
+
+    <script src="/static/script.js"></script>
 </body>
 
 </html>

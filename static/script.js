@@ -1,7 +1,8 @@
+// SecureChat v2.0 - Cleaned up, professional implementation
 document.addEventListener('DOMContentLoaded', () => {
-    const $ = id => document.getElementById(id.replace('#', ''));
+    const $ = id => document.getElementById(id);
 
-    // SECURITY: XSS Protection
+    // ===== SECURITY: Input Sanitization =====
     const sanitizeHTML = (str) => {
         if (!str) return '';
         const div = document.createElement('div');
@@ -9,531 +10,787 @@ document.addEventListener('DOMContentLoaded', () => {
         return div.innerHTML;
     };
 
-    const sanitizeURL = (url) => {
-        try {
-            const parsed = new URL(url);
-            if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
-                return url;
-            }
-        } catch { }
-        return '#';
+    const validateInput = (v, max = 1000) => {
+        if (!v || typeof v !== 'string') return '';
+        return v.trim().substring(0, max);
     };
 
-    const validateInput = (value, type = 'text', maxLength = 1000) => {
-        if (!value || typeof value !== 'string') return '';
-        value = value.trim();
-        if (value.length > maxLength) value = value.substring(0, maxLength);
-        return value;
+    // ===== PASSWORD VALIDATION (CRITICAL FIX: HIGH-5) =====
+    const validatePassword = (password) => {
+        const errors = [];
+        if (password.length < 12) errors.push("Password must be at least 12 characters");
+        if (!/[A-Z]/.test(password)) errors.push("Must contain uppercase letter");
+        if (!/[a-z]/.test(password)) errors.push("Must contain lowercase letter");
+        if (!/[0-9]/.test(password)) errors.push("Must contain number");
+        if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) errors.push("Must contain special character");
+        return errors;
     };
 
+    // ===== STATE MANAGEMENT =====
+    const state = {
+        currentUser: localStorage.getItem('sc_username') || null,
+        userId: null,
+        rooms: {},
+        activeRoom: null,
+        theme: localStorage.getItem('sc_theme') || 'light',
+        isOnline: navigator.onLine,
+        replyingTo: null,
+        editingMessage: null
+    };
+
+    // ===== DOM ELEMENTS =====
     const elements = {
-        accUser: $('#acc-user'), accPass: $('#acc-pass'), loginBtn: $('#login-btn'), regBtn: $('#reg-btn'),
-        roomInput: $('#room-id'), passInput: $('#room-password'), joinBtn: $('#join-btn'),
-        roomList: $('#room-list'), roomHistoryDiv: $('#room-history'), logoutBtn: $('#logout-btn'),
-        genRoom: $('#gen-room'), gotoChat: $('#goto-chat'),
-        form: $('#message-form'), input: $('#message-input'), msgContainers: $('#message-containers'), typingArea: $('#typing-area'),
-        roomLabel: $('#display-room'), userListDiv: $('#user-list'), sidebar: $('#sidebar'),
-        qrModal: $('#qr-modal'), qrcodeDiv: $('#qrcode'), imgInput: $('#img-input'), closeQr: $('#close-qr'),
-        voiceBtn: $('#voice-btn'), voiceOverlay: $('#voice-overlay'), voiceTimer: $('#voice-timer'), stopVoice: $('#stop-voice'), cancelVoice: $('#cancel-voice'),
-        destructToggle: $('#destruct-toggle'), vanishInd: $('#vanish-indicator'), strengthBar: $('#strength-bar'),
-        adminPanel: $('#admin-panel'), wipeBtn: $('#wipe-btn'), lockBtn: $('#lock-btn'), panicBtn: $('#panic-btn'),
-        copyInfo: $('#copy-info'), emojiBtn: $('#emoji-btn'), emojiPicker: $('#emoji-picker'),
-        addDimension: $('#add-dimension'), activeRoomsTabs: $('#active-rooms-tabs'),
-        guideModal: $('#ghost-guide'), guideTitle: $('#guide-title'), guideText: $('#guide-text'), guideNext: $('#guide-next'),
-        vanishDrop: $('#vanish-drop-zone'), toggleSidebar: $('#toggle-sidebar'),
-        woosh: $('#woosh-sound'), avOpts: document.querySelectorAll('.av-opt')
+        // Auth screens
+        loginScreen: $('login-screen'),
+        loginForm: $('login-form'),
+        registerForm: $('register-form'),
+        loginUsername: $('login-username'),
+        loginPassword: $('login-password'),
+        loginBtn: $('login-btn'),
+        registerUsername: $('register-username'),
+        registerPassword: $('register-password'),
+        registerBtn: $('register-btn'),
+        showRegister: $('show-register'),
+        showLogin: $('show-login'),
+        showRecover: $('show-recover'),
+
+        // Modals
+        recoveryModal: $('recovery-modal'),
+        recoveryKeyDisplay: $('recovery-key-display'),
+        recoveryKeyText: $('recovery-key-text'),
+        copyRecoveryKey: $('copy-recovery-key'),
+        closeRecovery: $('close-recovery'),
+        recoveryForm: $('recovery-form'),
+        recoverUsername: $('recover-username'),
+        recoverKey: $('recover-key'),
+        recoverPassword: $('recover-password'),
+        recoverBtn: $('recover-btn'),
+        cancelRecover: $('cancel-recover'),
+
+        // Chat interface
+        chatScreen: $('chat-screen'),
+        sidebar: $('sidebar'),
+        chatList: $('chat-list'),
+        searchInput: $('search-input'),
+        newChatBtn: $('new-chat-btn'),
+        themeToggle: $('theme-toggle'),
+        settingsBtn: $('settings-btn'),
+
+        // Chat area
+        chatHeader: $('chat-name'),
+        chatStatus: $('chat-status'),
+        messagesContainer: $('messages-container'),
+        messageInput: $('message-input'),
+        sendBtn: $('send-btn'),
+        attachBtn: $('attach-btn'),
+        fileInput: $('file-input'),
+        backBtn: $('back-btn'),
+
+        // Reply
+        replyPreview: $('reply-preview'),
+        replyPreviewText: $('reply-preview-text'),
+        replyToUser: $('reply-to-user'),
+        cancelReply: $('cancel-reply'),
+
+        // Typing indicator
+        typingIndicator: $('typing-indicator'),
+        typingUser: $('typing-user'),
+
+        // New chat modal
+        newChatModal: $('new-chat-modal'),
+        roomIdInput: $('room-id-input'),
+        roomPasswordInput: $('room-password-input'),
+        joinRoomBtn: $('join-room-btn'),
+        generateRoomId: $('generate-room-id'),
+        cancelNewChat: $('cancel-new-chat'),
+
+        // Settings
+        settingsModal: $('settings-modal'),
+        closeSettings: $('close-settings'),
+        logoutBtn: $('logout-btn'),
+        exportDataBtn: $('export-data-btn'),
+        deleteAccountBtn: $('delete-account-btn'),
+
+        // Status
+        offlineIndicator: $('offline-indicator')
     };
 
-    // CONSTANTS
-    const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
-    const MAX_VOICE_DURATION = 60; // seconds
-    const MIN_PASSWORD_LENGTH = 8;
-
-    let state = {
-        name: localStorage.getItem('ghostName') || '', uid: localStorage.getItem('ghostUid') || null,
-        avatar: localStorage.getItem('ghostAvatar') || '👻',
-        rooms: {}, // { roomID: { ws, key, name, isAdmin, isLocked, users: [] } }
-        activeRoom: null, isDestruct: false, guideStep: 0,
-        mediaRecorder: null, audioChunks: [], voiceStartTime: 0, voiceInterval: null,
-        draggedMsgId: null, targetMsg: null
+    // ===== THEME ENGINE (MED-5 FIX) ===== 
+    const applyTheme = () => {
+        document.documentElement.setAttribute('data-theme', state.theme);
+        localStorage.setItem('sc_theme', state.theme);
     };
+    applyTheme();
 
-    const showToast = (msg) => {
-        const t = document.createElement('div'); t.className = 'toast'; t.innerText = msg;
-        document.body.appendChild(t); setTimeout(() => t.remove(), 4000);
+    // ===== ONLINE/OFFLINE DETECTION (MED-4 FIX) =====
+    const updateOnlineStatus = () => {
+        state.isOnline = navigator.onLine;
+        elements.offlineIndicator.classList.toggle('hidden', state.isOnline);
+        if (!state.isOnline) {
+            showToast("No internet connection");
+        }
     };
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
 
-    // --- ONBOARDING ---
-    const guide = [
-        { t: "Ghost Protocol 1.0", p: "Your identity is encrypted. Your messages are ephemeral. No traces remain on our core." },
-        { t: "Zero-Knowledge Seals", p: "The 'Encryption Seal' is your private key. We never see it. If you lose it, your messages are lost forever." },
-        { t: "The Black Hole", p: "Drag any message to the center of the screen to vanish it instantly for everyone." },
-        { t: "Voice Fragments", p: "Hold the mic 🎤 to transmit encrypted audio. It self-destructs after one echo." }
-    ];
-    function updateGuide() {
-        if (state.guideStep < guide.length) {
-            elements.guideTitle.innerText = guide[state.guideStep].t;
-            elements.guideText.innerText = guide[state.guideStep].p;
-        } else { elements.guideModal.classList.add('hidden'); localStorage.setItem('onboarded_v4', '1'); }
+    // ===== NOTIFICATIONS (MED-9 FIX) =====
+    if (Notification.permission === "default") {
+        Notification.requestPermission();
     }
-    elements.guideNext.onclick = () => { state.guideStep++; updateGuide(); };
-    if (!localStorage.getItem('onboarded_v4')) { updateGuide(); elements.guideModal.classList.remove('hidden'); }
 
-    // --- AVATAR SELECTION ---
-    elements.avOpts.forEach(opt => {
-        opt.onclick = () => {
-            elements.avOpts.forEach(o => o.classList.remove('active'));
-            opt.classList.add('active');
-            state.avatar = opt.dataset.av;
-            localStorage.setItem('ghostAvatar', state.avatar);
-        };
-    });
+    const notify = (title, body) => {
+        if (Notification.permission === "granted" && document.hidden) {
+            new Notification(title, { body, icon: '/favicon.ico' });
+        }
+    };
 
-    // --- CRYPTO CORE ---
-    async function getSecretKey(pwd, room) {
-        const enc = new TextEncoder(), data = enc.encode(pwd + room);
+    // ===== TOAST NOTIFICATIONS =====
+    const showToast = (message, duration = 3000) => {
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), duration);
+    };
+
+    // ===== CRYPTO FUNCTIONS =====
+    const getSecretKey = async (password, roomId) => {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(password + roomId);
         const hash = await crypto.subtle.digest('SHA-256', data);
         return await crypto.subtle.importKey('raw', hash, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
-    }
+    };
 
-    async function encrypt(data, roomID, isText = true) {
+    const encrypt = async (text, roomId) => {
         const iv = crypto.getRandomValues(new Uint8Array(12));
-        const payload = isText ? new TextEncoder().encode(data) : data;
-        const roomKey = state.rooms[roomID].key;
-        const enc = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, roomKey, payload);
-        const blob = new Uint8Array(iv.length + enc.byteLength);
-        blob.set(iv); blob.set(new Uint8Array(enc), iv.length);
-        return btoa(String.fromCharCode(...blob));
-    }
+        const key = state.rooms[roomId].key;
+        const encoder = new TextEncoder();
+        const encrypted = await crypto.subtle.encrypt(
+            { name: 'AES-GCM', iv },
+            key,
+            encoder.encode(text)
+        );
+        const combined = new Uint8Array(iv.length + encrypted.byteLength);
+        combined.set(iv);
+        combined.set(new Uint8Array(encrypted), iv.length);
+        return btoa(String.fromCharCode(...combined));
+    };
 
-    async function decrypt(b64, roomID, isText = true) {
+    const decrypt = async (encryptedData, roomId) => {
         try {
-            const blob = new Uint8Array(atob(b64).split('').map(c => c.charCodeAt(0)));
-            const iv = blob.slice(0, 12), data = blob.slice(12);
-            if (!state.rooms[roomID]) return null;
-            const dec = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, state.rooms[roomID].key, data);
-            return isText ? new TextDecoder().decode(dec) : dec;
-        } catch { return null; }
-    }
+            const raw = Uint8Array.from(atob(encryptedData), c => c.charCodeAt(0));
+            const iv = raw.slice(0, 12);
+            const data = raw.slice(12);
+            const key = state.rooms[roomId].key;
+            const decrypted = await crypto.subtle.decrypt(
+                { name: 'AES-GCM', iv },
+                key,
+                data
+            );
+            const decoder = new TextDecoder();
+            return decoder.decode(decrypted);
+        } catch (e) {
+            console.error('Decryption failed:', e);
+            return null;
+        }
+    };
 
-    // --- VOICE FRAGMENTS ---
-    elements.voiceBtn.onclick = async () => {
+    // ===== AUTH FUNCTIONS =====
+    // ERROR HANDLING FIX (CODE-1)
+    const apiCall = async (url, method = 'POST', body = null) => {
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            state.mediaRecorder = new MediaRecorder(stream);
-            state.audioChunks = [];
-            state.mediaRecorder.ondataavailable = e => state.audioChunks.push(e.data);
-            state.mediaRecorder.onstop = async () => {
-                const blob = new Blob(state.audioChunks, { type: 'audio/ogg; codecs=opus' });
-                const arrayBuffer = await blob.arrayBuffer();
-                const enc = await encrypt(new Uint8Array(arrayBuffer), state.activeRoom, false);
-                state.rooms[state.activeRoom].ws.send(JSON.stringify({ type: 'file', content: enc, self_destruct: true, subtype: 'voice' }));
-                stream.getTracks().forEach(t => t.stop());
+            const options = {
+                method,
+                headers: { 'Content-Type': 'application/json' }
             };
-            state.mediaRecorder.start();
-            state.voiceStartTime = Date.now();
-            elements.voiceOverlay.classList.remove('hidden');
-            state.voiceInterval = setInterval(() => {
-                const sec = Math.floor((Date.now() - state.voiceStartTime) / 1000);
-                elements.voiceTimer.innerText = `00:${sec.toString().padStart(2, '0')}`;
-                // AUTO-STOP at 60 seconds
-                if (sec >= MAX_VOICE_DURATION) {
-                    showToast("Max duration reached");
-                    elements.stopVoice.click();
-                }
-            }, 1000);
-        } catch (e) { showToast("Microphone Blocked"); }
+            if (body) options.body = JSON.stringify(body);
+
+            const response = await fetch(url, options);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return await response.json();
+        } catch (err) {
+            showToast(`Connection failed: ${err.message}`);
+            console.error('API Error:', err);
+            throw err;
+        }
     };
-    elements.stopVoice.onclick = () => { clearInterval(state.voiceInterval); state.mediaRecorder.stop(); elements.voiceOverlay.classList.add('hidden'); };
-    elements.cancelVoice.onclick = () => { clearInterval(state.voiceInterval); state.mediaRecorder.stop(); state.audioChunks = []; elements.voiceOverlay.classList.add('hidden'); };
 
-    // --- FILE UPLOAD ---
-    elements.imgInput.onchange = async (e) => {
-        const file = e.target.files[0];
-        if (!file || !state.activeRoom) return;
+    // Login
+    elements.loginBtn.addEventListener('click', async () => {
+        const username = validateInput(elements.loginUsername.value, 50);
+        const password = validateInput(elements.loginPassword.value, 128);
 
-        // FILE SIZE VALIDATION
-        if (file.size > MAX_FILE_SIZE) {
-            showToast(`File too large. Max ${MAX_FILE_SIZE / 1024 / 1024}MB`);
-            elements.imgInput.value = '';
+        if (!username || !password) {
+            showToast("Please enter username and password");
             return;
         }
 
-        const reader = new FileReader();
-        reader.onload = async () => {
-            const enc = await encrypt(new Uint8Array(reader.result), state.activeRoom, false);
-            state.rooms[state.activeRoom].ws.send(JSON.stringify({
-                type: file.type.startsWith('image/') ? 'image' : 'file',
-                content: enc,
-                self_destruct: state.isDestruct
-            }));
-            elements.imgInput.value = '';
-            showToast("Fragment encrypted & sent");
-        };
-        reader.readAsArrayBuffer(file);
-    };
+        elements.loginBtn.disabled = true;
+        elements.loginBtn.innerHTML = '<span class="loader"></span>';
 
-    // --- UI ENGINE ---
-    async function addMsg(roomID, user, content, destruct, id, type = 'text', subtype = '') {
-        const area = $(`area-${roomID}`); if (!area) return;
-        const isMe = user === state.rooms[roomID].name;
-        const div = document.createElement('div');
-        div.id = `msg-${id}`;
-        div.draggable = true;
-        div.ondragstart = () => { state.draggedMsgId = id; elements.vanishDrop.classList.remove('hidden'); };
-        div.ondragend = () => elements.vanishDrop.classList.add('hidden');
-
-        if (type === 'system') {
-            div.className = 'system-msg'; div.innerHTML = `<span>— ${content} —</span>`;
-        } else {
-            div.className = `message ${isMe ? 'my-msg' : 'other-msg'} ${destruct ? 'destructing' : ''}`;
-            div.onclick = () => { state.targetMsg = { id, roomID }; elements.emojiPicker.classList.remove('hidden'); };
-            let html = isMe ? '' : `<div style="font-size:0.75rem; font-weight:900; color:var(--primary); margin-bottom:8px;">${user}</div>`;
-
-            if (type === 'image' || type === 'file') {
-                const dec = await decrypt(content, roomID, false);
-                if (dec) {
-                    const blob = new Blob([dec]);
-                    const url = URL.createObjectURL(blob);
-                    // SECURITY: Validate blob URLs and set CSP-compliant attributes
-                    if (type === 'image') html += `<img src="${sanitizeURL(url)}" class="msg-img" style="max-width:100%; border-radius:12px;" loading="lazy" alt="Encrypted image">`;
-                    else if (subtype === 'voice') html += `<div class="voice-frag">🔊 <audio controls src="${sanitizeURL(url)}" style="height:30px;" preload="metadata"></audio></div>`;
-                    else html += `<div class="file-link">📎 <a href="${sanitizeURL(url)}" download="ghost-file" style="color:var(--primary); text-decoration:none; font-weight:800;" rel="noopener noreferrer">FRAGMENT</a></div>`;
-                } else html += `<div style="color:var(--danger); font-size:0.75rem; line-height:1.5;">
-                    <div style="font-weight:800; margin-bottom:4px;">⚠️ DECRYPTION FAILED</div>
-                    <div style="opacity:0.7;">Wrong encryption seal or corrupted data. Verify you're using the correct room password.</div>
-                </div>`;
+        try {
+            const result = await apiCall('/api/login', 'POST', { username, password });
+            if (result.status === 'ok') {
+                state.currentUser = username;
+                state.userId = result.user_id;
+                localStorage.setItem('sc_username', username);
+                elements.loginScreen.classList.add('hidden');
+                elements.chatScreen.classList.remove('hidden');
+                loadChatHistory();
             } else {
-                const dec = await decrypt(content, roomID, true);
-                if (!dec) {
-                    html += `<div style="color:var(--danger); font-size:0.75rem; font-style:italic;">⚠️ Message corrupted or wrong seal</div>`;
-                } else {
-                    // CRITICAL FIX: XSS Protection - Sanitize all user-generated content
-                    html += `<div>${sanitizeHTML(dec)}</div>`;
-                }
+                showToast(result.msg || "Login failed");
             }
-
-            div.innerHTML = html + `<div class="reactions" id="react-${id}"></div>`;
+        } catch (err) {
+            // Error already handled by apiCall
+        } finally {
+            elements.loginBtn.disabled = false;
+            elements.loginBtn.textContent = 'Log In';
         }
-        area.appendChild(div); area.scrollTop = area.scrollHeight;
-        if (destruct) elements.woosh.play().catch(() => { });
-    }
+    });
 
-    elements.vanishDrop.ondragover = e => e.preventDefault();
-    elements.vanishDrop.ondrop = () => {
-        const r = state.activeRoom;
-        if (state.draggedMsgId && r) {
-            state.rooms[r].ws.send(JSON.stringify({ type: 'delete_request', id: state.draggedMsgId }));
-            showToast("Banished to Oblivion");
-        }
-    };
+    // Register
+    elements.registerBtn.addEventListener('click', async () => {
+        const username = validateInput(elements.registerUsername.value, 50);
+        const password = validateInput(elements.registerPassword.value, 128);
 
-    // --- AUTH ---
-    elements.loginBtn.onclick = async () => {
-        // SECURITY: Input validation
-        const u = validateInput(elements.accUser.value, 'username', 50);
-        const p = validateInput(elements.accPass.value, 'password', 128);
-
-        if (!u || !p) {
-            showToast("Username and password required");
+        const passwordErrors = validatePassword(password);
+        if (passwordErrors.length > 0) {
+            showToast(passwordErrors[0]);
             return;
         }
 
-        if (u.length < 3) {
-            showToast("Username must be at least 3 characters");
-            return;
-        }
-        try {
-            const res = await (await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: u, password: p }) })).json();
-            if (res.status === 'ok') {
-                state.uid = res.user_id; state.name = u;
-                localStorage.setItem('ghostUid', state.uid); localStorage.setItem('ghostName', u);
-                $('#user-screen').classList.add('hidden'); $('#auth-screen').classList.remove('hidden');
-                loadHistory();
-            } else showToast(res.msg);
-        } catch (e) { showToast("Oracle Offline"); }
-    };
-
-    elements.regBtn.onclick = async () => {
-        // SECURITY: Input validation for registration
-        const u = validateInput(elements.accUser.value, 'username', 50);
-        const p = validateInput(elements.accPass.value, 'password', 128);
-
-        if (!u || !p) {
-            showToast("Username and password required");
+        if (!username || !password) {
+            showToast("Please enter username and password");
             return;
         }
 
-        if (u.length < 3) {
-            showToast("Username must be at least 3 characters");
-            return;
-        }
-
-        if (p.length < 8) {
-            showToast("Password must be at least 8 characters");
-            return;
-        }
-        try {
-            const res = await (await fetch('/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: u, password: p }) })).json();
-            if (res.status === 'ok') showToast("ID Manifested. Now Login.");
-            else showToast(res.msg);
-        } catch (e) { showToast("Oracle Offline"); }
-    };
-
-    async function loadHistory() {
-        const hist = await (await fetch(`/api/history/${state.uid}`)).json();
-        if (hist.length) {
-            elements.roomHistoryDiv.classList.remove('hidden');
-            elements.roomList.innerHTML = hist.map(r => `<span class="room-tag">${r}</span>`).join('');
-            document.querySelectorAll('.room-tag').forEach(t => t.onclick = () => elements.roomInput.value = t.innerText);
-        }
-    }
-
-    elements.logoutBtn.onclick = () => {
-        localStorage.clear();
-        Object.values(state.rooms).forEach(r => r.ws.close());
-        location.reload();
-    };
-
-    // --- LATTICE OVERLAY ---
-    const lattice = document.createElement('div');
-    lattice.className = 'lattice-overlay';
-    document.body.appendChild(lattice);
-
-    const triggerLattice = (active) => {
-        lattice.classList.toggle('lattice-active', active);
-    };
-
-    // --- ROOM MANAGEMENT ---
-    elements.joinBtn.onclick = async () => {
-        // SECURITY: Validate room credentials
-        const r = validateInput(elements.roomInput.value, 'roomid', 100);
-        const p = validateInput(elements.passInput.value, 'password', 128);
-
-        if (!r || !p) {
-            showToast("Dimension ID and Encryption Seal required");
-            return;
-        }
-
-        // Validate room ID format (alphanumeric, dashes, underscores only)
-        if (!/^[a-zA-Z0-9-_]+$/.test(r)) {
-            showToast("Invalid Dimension ID format. Use only letters, numbers, dashes, and underscores.");
-            return;
-        }
-
-        // PASSWORD VALIDATION
-        if (p.length < MIN_PASSWORD_LENGTH) {
-            return showToast(`Seal must be at least ${MIN_PASSWORD_LENGTH} characters`);
-        }
-
-        if (state.rooms[r]) return switchRoom(r);
-
-        // LATTICE HANDSHAKE FLOW
-        triggerLattice(true);
-        elements.joinBtn.innerText = "CRYPTO-HANDSHAKING...";
-        elements.joinBtn.disabled = true;
+        elements.registerBtn.disabled = true;
+        elements.registerBtn.innerHTML = '<span class="loader"></span>';
 
         try {
-            const v = await (await fetch('/api/verify-room', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ room_id: r, password: p }) })).json();
-            if (v.status === 'fail') {
-                triggerLattice(false);
-                elements.joinBtn.innerText = "Phase In";
-                elements.joinBtn.disabled = false;
-                return showToast(v.msg);
+            const result = await apiCall('/api/register', 'POST', { username, password });
+            if (result.status === 'ok') {
+                elements.recoveryKeyText.textContent = result.recovery_key;
+                elements.recoveryKeyDisplay.classList.remove('hidden');
+                elements.recoveryForm.classList.add('hidden');
+                elements.recoveryModal.classList.remove('hidden');
+            } else {
+                showToast(result.msg || "Registration failed");
             }
+        } catch (err) {
+            // Error already handled
+        } finally {
+            elements.registerBtn.disabled = false;
+            elements.registerBtn.textContent = 'Create Account';
+        }
+    });
 
-            // SIMULATE QUANTUM HANDSHAKE Visual delay
-            await new Promise(res => setTimeout(res, 800));
+    // UI toggles
+    elements.showRegister.addEventListener('click', (e) => {
+        e.preventDefault();
+        elements.loginForm.classList.add('hidden');
+        elements.registerForm.classList.remove('hidden');
+    });
 
-            const key = await getSecretKey(p, r);
-            const displayName = `${state.avatar} ${state.name}`;
-            state.rooms[r] = { name: displayName, key, isAdmin: false, users: [], adminName: '', reconnectAttempts: 0 };
+    elements.showLogin.addEventListener('click', (e) => {
+        e.preventDefault();
+        elements.registerForm.classList.add('hidden');
+        elements.loginForm.classList.remove('hidden');
+    });
 
-            const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const ws = new WebSocket(`${proto}//${location.host}/ws/${r}/${encodeURIComponent(displayName)}?pwd=${encodeURIComponent(p)}`);
-            state.rooms[r].ws = ws;
+    elements.showRecover.addEventListener('click', (e) => {
+        e.preventDefault();
+        elements.recoveryKeyDisplay.classList.add('hidden');
+        elements.recoveryForm.classList.remove('hidden');
+        elements.recoveryModal.classList.remove('hidden');
+    });
 
-            ws.onerror = (err) => {
-                console.error('WebSocket error:', err);
-                showToast("Connection unstable");
+    elements.closeRecovery.addEventListener('click', () => {
+        elements.recoveryModal.classList.add('hidden');
+        elements.registerForm.classList.add('hidden');
+        elements.loginForm.classList.remove('hidden');
+    });
+
+    elements.copyRecoveryKey.addEventListener('click', () => {
+        navigator.clipboard.writeText(elements.recoveryKeyText.textContent);
+        showToast("Recovery key copied to clipboard");
+    });
+
+    elements.recoverBtn.addEventListener('click', async () => {
+        const username = elements.recoverUsername.value;
+        const recoveryKey = elements.recoverKey.value;
+        const newPassword = elements.recoverPassword.value;
+
+        const passwordErrors = validatePassword(newPassword);
+        if (passwordErrors.length > 0) {
+            showToast(passwordErrors[0]);
+            return;
+        }
+
+        try {
+            const result = await apiCall('/api/recover', 'POST', {
+                username,
+                recovery_key: recoveryKey,
+                new_password: newPassword
+            });
+            if (result.status === 'ok') {
+                showToast("Account recovered! Please log in");
+                elements.recoveryModal.classList.add('hidden');
+                elements.loginUsername.value = username;
+                elements.loginPassword.value = newPassword;
+            } else {
+                showToast(result.msg || "Recovery failed");
+            }
+        } catch (err) {
+            // Error handled
+        }
+    });
+
+    elements.cancelRecover.addEventListener('click', () => {
+        elements.recoveryModal.classList.add('hidden');
+    });
+
+    // ===== WEBSOCKET & ROOMS =====
+    const getWSToken = async () => {
+        try {
+            const result = await apiCall('/api/ws-token', 'GET');
+            return result.token;
+        } catch {
+            return null;
+        }
+    };
+
+    const joinRoom = async (roomId, roomPassword) => {
+        if (roomPassword.length < 8) {
+            showToast("Room password must be at least 8 characters");
+            return;
+        }
+
+        const token = await getWSToken();
+        if (!token) {
+            showToast("Session expired. Please log in again");
+            return;
+        }
+
+        try {
+            const key = await getSecretKey(roomPassword, roomId);
+            const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const ws = new WebSocket(`${protocol}//${location.host}/ws/${roomId}/${state.currentUser}?token=${token}&pwd=${encodeURIComponent(roomPassword)}`);
+
+            state.rooms[roomId] = {
+                key,
+                ws,
+                users: [],
+                messages: [],
+                isAdmin: false
             };
 
             ws.onopen = () => {
-                triggerLattice(false);
-                showToast("Dimension Sequenced");
-                $('#auth-screen').classList.add('hidden'); $('#chat-screen').classList.remove('hidden');
-                elements.gotoChat.classList.remove('hidden'); buildTab(r); switchRoom(r);
-                elements.joinBtn.innerText = "Phase In";
-                elements.joinBtn.disabled = false;
-                updateCommunities(r);
-                state.rooms[r].reconnectAttempts = 0; // Reset on successful connection
+                showToast(`Joined room: ${roomId}`);
+                addChatToList(roomId);
+                switchToRoom(roomId);
+                elements.newChatModal.classList.add('hidden');
+
+                // Save to history
+                apiCall('/api/save-room', 'POST', { user_id: state.userId, room_id: roomId });
             };
 
-            ws.onmessage = async e => {
-                const d = JSON.parse(e.data);
-                if (d.type === 'user_list') {
-                    const rd = state.rooms[r];
-                    if (!rd) return;
-                    rd.isAdmin = (d.admin === rd.name); rd.users = d.users; rd.isLocked = d.is_locked; rd.adminName = d.admin;
-                    updateUserList(r);
-                } else if (['message', 'image', 'file'].includes(d.type)) {
-                    addMsg(r, d.username, d.content, d.self_destruct, d.id, d.type, d.subtype);
-                } else if (d.type === 'reaction') {
-                    const ra = $(`react-${d.msgId}`); if (ra) { const s = document.createElement('span'); s.className = 'reaction-tag'; s.innerText = d.emoji; ra.appendChild(s); }
-                } else if (d.type === 'system') addMsg(r, null, d.content, false, null, 'system');
-                else if (d.type === 'delete_msg') { $(`msg-${d.id}`)?.remove(); }
-                else if (d.type === 'wipe_all') { const area = $(`area-${r}`); if (area) area.innerHTML = ''; showToast("Dimension Wiped"); }
-                else if (d.type === 'kicked' && d.target === state.rooms[r].name) { leaveDimension(r); showToast("Banished"); }
-                else if (d.type === 'typing') {
-                    if (state.activeRoom === r) {
-                        elements.typingArea.innerText = d.status ? `${d.username} is oscillating...` : '';
-                    }
+            ws.onmessage = async (e) => {
+                const data = JSON.parse(e.data);
+                handleWebSocketMessage(roomId, data);
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                showToast("Connection error");
+            };
+
+            ws.onclose = () => {
+                if (state.rooms[roomId]) {
+                    showToast(`Disconnected from ${roomId}`);
+                    delete state.rooms[roomId];
                 }
             };
-
-            ws.onclose = (event) => {
-                if (state.rooms[r]) {
-                    // RECONNECTION LOGIC
-                    if (state.rooms[r].reconnectAttempts < 3 && !event.wasClean) {
-                        state.rooms[r].reconnectAttempts++;
-                        showToast(`Reconnecting... (${state.rooms[r].reconnectAttempts}/3)`);
-                        setTimeout(() => {
-                            if (state.rooms[r]) elements.joinBtn.click(); // Retry connection
-                        }, 2000 * state.rooms[r].reconnectAttempts);
-                    } else {
-                        leaveDimension(r);
-                        if (!event.wasClean) showToast("Connection lost");
-                    }
-                }
-            };
-
-            fetch('/api/save-room', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: state.uid, room_id: r }) });
-        } catch (e) {
-            triggerLattice(false);
-            showToast("Handshake Failed: " + e.message);
-            elements.joinBtn.innerText = "Phase In";
-            elements.joinBtn.disabled = false;
+        } catch (error) {
+            console.error('Join room error:', error);
+            showToast("Failed to join room");
         }
     };
 
-    async function updateCommunities(r) {
-        const commList = $('#community-list');
-        if (!commList) return;
-        // Seed some demo communities based on room ID
-        const demoComms = [`${r}-council`, `${r}-shadows`, `global-spectres`];
-        commList.innerHTML = demoComms.map(c => `<div class="community-item" style="padding:10px; border-radius:12px; font-size:0.8rem; background:rgba(255,255,255,0.02); transition:0.3s;">🌀 ${c}</div>`).join('');
-    }
+    const handleWebSocketMessage = async (roomId, data) => {
+        const room = state.rooms[roomId];
+        if (!room) return;
 
+        switch (data.type) {
+            case 'user_list':
+                room.users = data.users;
+                room.isAdmin = data.admin === state.currentUser;
+                updateChatStatus(roomId);
+                break;
 
-    function buildTab(r) {
-        if ($(`tab-${r}`)) return;
-        const t = document.createElement('div'); t.id = `tab-${r}`; t.className = 'room-tab';
-        t.innerHTML = `<span>${r}</span><button class="close-tab">×</button>`;
-        t.querySelector('.close-tab').onclick = (e) => { e.stopPropagation(); leaveDimension(r); };
-        t.onclick = () => switchRoom(r);
-        elements.activeRoomsTabs.appendChild(t);
-        const a = document.createElement('main'); a.id = `area-${r}`; a.className = 'message-area hidden';
-        elements.msgContainers.appendChild(a);
-    }
+            case 'message':
+            case 'image':
+            case 'file':
+                const decrypted = await decrypt(data.content, roomId);
+                if (decrypted) {
+                    const message = {
+                        id: data.id,
+                        sender: data.username,
+                        content: decrypted,
+                        timestamp: new Date(data.timestamp),
+                        reply_to: data.reply_to,
+                        type: data.type
+                    };
+                    room.messages.push(message);
+                    if (state.activeRoom === roomId) {
+                        renderMessage(message);
+                        notify(`${data.username}`, decrypted.substring(0, 50));
+                    }
+                }
+                break;
 
-    function switchRoom(r) {
-        state.activeRoom = r; elements.roomLabel.innerText = r;
-        document.querySelectorAll('.message-area').forEach(el => el.classList.add('hidden'));
-        const activeArea = $(`area-${r}`);
-        if (activeArea) activeArea.classList.remove('hidden');
-        document.querySelectorAll('.room-tab').forEach(el => el.classList.remove('tab-active'));
-        const activeTab = $(`tab-${r}`);
-        if (activeTab) activeTab.classList.add('tab-active');
-        updateUserList(r);
-        elements.adminPanel.classList.toggle('hidden', !state.rooms[r].isAdmin);
-        elements.vanishInd.classList.toggle('hidden', !state.isDestruct);
-    }
+            case 'typing':
+                if (state.activeRoom === roomId && data.username !== state.currentUser) {
+                    elements.typingUser.textContent = data.username;
+                    elements.typingIndicator.classList.toggle('hidden', !data.status);
+                }
+                break;
 
-    window.leaveDimension = r => {
-        if (state.rooms[r]) {
-            state.rooms[r].ws.close();
-            delete state.rooms[r];
-        }
-        $(`tab-${r}`)?.remove(); $(`area-${r}`)?.remove();
-        if (state.activeRoom === r) {
-            const next = Object.keys(state.rooms)[0];
-            if (next) switchRoom(next);
-            else { $('#chat-screen').classList.add('hidden'); $('#auth-screen').classList.remove('hidden'); elements.gotoChat.classList.add('hidden'); }
+            case 'edit_msg':
+                updateMessage(roomId, data.id, data.content);
+                break;
+
+            case 'delete_msg':
+                deleteMessage(data.id);
+                break;
         }
     };
 
-    function updateUserList(r) {
-        if (state.activeRoom !== r || !state.rooms[r]) return;
-        const rd = state.rooms[r];
-        elements.userListDiv.innerHTML = rd.users.map(u => `
-            <div class="user-item" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; font-size:0.9rem;">
-                <span>${u} ${u === rd.adminName ? '⭐' : ''}</span>
-                ${rd.isAdmin && u !== rd.name ? `<button onclick="banishPhantom('${u}','${r}')" style="background:none; border:none; color:var(--danger); cursor:pointer; font-weight:800; font-size:0.7rem;">KICK</button>` : ''}
+    // ===== UI FUNCTIONS =====
+    const addChatToList = (roomId) => {
+        const chatItem = document.createElement('div');
+        chatItem.className = 'chat-item';
+        chatItem.id = `chat-${roomId}`;
+        chatItem.innerHTML = `
+            <div class="avatar">${roomId.charAt(0).toUpperCase()}</div>
+            <div class="chat-item-content">
+                <div class="chat-item-header">
+                    <div class="chat-item-name">${roomId}</div>
+                    <div class="chat-item-time">Now</div>
+                </div>
+                <div class="chat-item-preview">Room ready</div>
             </div>
-        `).join('');
-    }
-
-    window.banishPhantom = (u, r) => state.rooms[r].ws.send(JSON.stringify({ type: 'kick', target: u }));
-    elements.wipeBtn.onclick = () => { if (confirm("Obliterate dimension records?")) state.rooms[state.activeRoom].ws.send(JSON.stringify({ type: 'wipe' })); };
-    elements.lockBtn.onclick = () => { const r = state.activeRoom; state.rooms[r].ws.send(JSON.stringify({ type: state.rooms[r].isLocked ? 'unlock' : 'lock' })); };
-    elements.addDimension.onclick = () => { $('#chat-screen').classList.add('hidden'); $('#auth-screen').classList.remove('hidden'); };
-    elements.gotoChat.onclick = () => { $('#auth-screen').classList.add('hidden'); $('#chat-screen').classList.remove('hidden'); };
-    elements.toggleSidebar.onclick = () => elements.sidebar.classList.toggle('hidden');
-    elements.panicBtn.onclick = () => location.reload();
-
-    // --- FORM ---
-    elements.form.onsubmit = async e => {
-        e.preventDefault(); const v = elements.input.value.trim(); if (!v || !state.activeRoom) return;
-        const enc = await encrypt(v, state.activeRoom);
-        state.rooms[state.activeRoom].ws.send(JSON.stringify({ type: 'message', content: enc, self_destruct: state.isDestruct }));
-        elements.input.value = '';
+        `;
+        chatItem.addEventListener('click', () => switchToRoom(roomId));
+        elements.chatList.appendChild(chatItem);
     };
 
-    elements.input.oninput = () => {
-        if (state.activeRoom) state.rooms[state.activeRoom].ws.send(JSON.stringify({ type: 'typing', status: elements.input.value.length > 0 }));
+    const switchToRoom = (roomId) => {
+        state.activeRoom = roomId;
+
+        // Update active state in list
+        document.querySelectorAll('.chat-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        const chatItem = $(`chat-${roomId}`);
+        if (chatItem) chatItem.classList.add('active');
+
+        // Update header
+        elements.chatHeader.textContent = roomId;
+
+        // Render messages
+        elements.messagesContainer.innerHTML = '';
+        const room = state.rooms[roomId];
+        if (room) {
+            room.messages.forEach(msg => renderMessage(msg));
+            updateChatStatus(roomId);
+        }
     };
 
-    // --- UTILS ---
-    elements.genRoom.onclick = () => { elements.roomInput.value = 'void-' + Math.random().toString(36).substring(2, 7); };
-    elements.destructToggle.onclick = () => {
-        state.isDestruct = !state.isDestruct;
-        elements.destructToggle.style.color = state.isDestruct ? 'var(--primary)' : 'var(--text-ghost)';
-        elements.vanishInd.classList.toggle('hidden', !state.isDestruct);
+    const updateChatStatus = (roomId) => {
+        if (state.activeRoom !== roomId) return;
+        const room = state.rooms[roomId];
+        if (room) {
+            const onlineCount = room.users.length;
+            elements.chatStatus.textContent = `${onlineCount} ${onlineCount === 1 ? 'participant' : 'participants'}`;
+            elements.chatStatus.classList.add('online');
+        }
     };
-    elements.emojiBtn.onclick = () => elements.emojiPicker.classList.toggle('hidden');
-    document.querySelectorAll('.emoji-opt').forEach(o => o.onclick = () => {
-        if (state.targetMsg) {
-            state.rooms[state.targetMsg.roomID].ws.send(JSON.stringify({ type: 'reaction', emoji: o.innerText, msgId: state.targetMsg.id }));
-            state.targetMsg = null;
-        } else elements.input.value += o.innerText;
-        elements.emojiPicker.classList.add('hidden');
+
+    const renderMessage = (message) => {
+        const msgDiv = document.createElement('div');
+        const isOwn = message.sender === state.currentUser;
+        msgDiv.className = isOwn ? 'message message-out' : 'message message-in';
+        msgDiv.id = `msg-${message.id}`;
+
+        let html = '';
+
+        // Reply preview
+        if (message.reply_to) {
+            html += `<div class="message-reply-preview">Replying to previous message</div>`;
+        }
+
+        // Sender (for incoming messages)
+        if (!isOwn) {
+            html += `<div class="message-sender">${sanitizeHTML(message.sender)}</div>`;
+        }
+
+        // Content
+        html += `<div class="message-content">${sanitizeHTML(message.content)}</div>`;
+
+        // Meta (time + status)
+        html += `<div class="message-meta">
+            <span class="message-time">${formatTime(message.timestamp)}</span>
+            ${isOwn ? '<span class="message-status">✓</span>' : ''}
+        </div>`;
+
+        msgDiv.innerHTML = html;
+
+        // Context menu for reply
+        msgDiv.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            startReply(message);
+        });
+
+        // Double click to edit own messages
+        if (isOwn) {
+            msgDiv.addEventListener('dblclick', () => {
+                editMessage(message);
+            });
+        }
+
+        elements.messagesContainer.appendChild(msgDiv);
+        elements.messagesContainer.scrollTop = elements.messagesContainer.scrollHeight;
+    };
+
+    const formatTime = (date) => {
+        const now = new Date();
+        const diff = now - date;
+
+        if (diff < 60000) return 'Just now';
+        if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        return `${hours}:${minutes}`;
+    };
+
+    const startReply = (message) => {
+        state.replyingTo = message;
+        elements.replyToUser.textContent = message.sender;
+        elements.replyPreviewText.textContent = message.content.substring(0, 50);
+        elements.replyPreview.classList.remove('hidden');
+        elements.messageInput.focus();
+    };
+
+    elements.cancelReply.addEventListener('click', () => {
+        state.replyingTo = null;
+        elements.replyPreview.classList.add('hidden');
     });
 
-    elements.copyInfo.onclick = () => {
-        const info = `Dimension: ${state.activeRoom}\nSeal: [HIDDEN]`;
-        navigator.clipboard.writeText(info); showToast("Bridge Meta Copied");
+    const editMessage = (message) => {
+        state.editingMessage = message;
+        elements.messageInput.value = message.content;
+        elements.messageInput.focus();
+        elements.messageInput.style.borderColor = 'var(--primary)';
     };
 
-    elements.showQR.onclick = () => {
-        elements.qrcodeDiv.innerHTML = '';
-        new QRCode(elements.qrcodeDiv, { text: `ghostchat://join?room=${state.activeRoom}`, width: 200, height: 200 });
-        elements.qrModal.classList.remove('hidden');
-    };
-    elements.closeQr.onclick = () => elements.qrModal.classList.add('hidden');
+    const updateMessage = async (roomId, messageId, encryptedContent) => {
+        const msgDiv = $(`msg-${messageId}`);
+        if (!msgDiv) return;
 
-    elements.passInput.oninput = () => {
-        const v = elements.passInput.value;
-        let score = 0; if (v.length > 6) score++; if (/[A-Z]/.test(v)) score++; if (/[0-9]/.test(v)) score++; if (/[^A-Za-z0-9]/.test(v)) score++;
-        const colors = ['#ff4757', '#ffa502', '#2ed573', '#00d2ff'];
-        elements.strengthBar.style.width = (score * 25) + '%';
-        elements.strengthBar.style.background = colors[score - 1] || '#ff4757';
+        const decrypted = await decrypt(encryptedContent, roomId);
+        if (decrypted) {
+            const contentDiv = msgDiv.querySelector('.message-content');
+            contentDiv.textContent = decrypted + ' (edited)';
+        }
     };
 
-    // Auto-login if session exists
-    if (state.uid && state.name) {
-        $('#user-screen').classList.add('hidden');
-        $('#auth-screen').classList.remove('hidden');
-        loadHistory();
+    const deleteMessage = (messageId) => {
+        const msgDiv = $(`msg-${messageId}`);
+        if (msgDiv) msgDiv.remove();
+    };
+
+    // ===== SENDING MESSAGES =====
+    const sendMessage = async () => {
+        if (!state.activeRoom) return;
+
+        const text = elements.messageInput.value.trim();
+        if (!text) return;
+
+        const room = state.rooms[state.activeRoom];
+        if (!room || !room.ws) return;
+
+        try {
+            const encrypted = await encrypt(text, state.activeRoom);
+
+            if (state.editingMessage) {
+                room.ws.send(JSON.stringify({
+                    type: 'edit_msg',
+                    id: state.editingMessage.id,
+                    content: encrypted
+                }));
+                state.editingMessage = null;
+                elements.messageInput.style.borderColor = '';
+            } else {
+                room.ws.send(JSON.stringify({
+                    type: 'message',
+                    content: encrypted,
+                    reply_to: state.replyingTo?.id || null
+                }));
+                state.replyingTo = null;
+                elements.replyPreview.classList.add('hidden');
+            }
+
+            elements.messageInput.value = '';
+            elements.messageInput.style.height = 'auto';
+        } catch (error) {
+            console.error('Send error:', error);
+            showToast("Failed to send message");
+        }
+    };
+
+    elements.sendBtn.addEventListener('click', sendMessage);
+    elements.messageInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+
+    // TYPING INDICATOR (MED-6 FIX)
+    let typingTimeout;
+    elements.messageInput.addEventListener('input', () => {
+        if (!state.activeRoom) return;
+        const room = state.rooms[state.activeRoom];
+        if (!room || !room.ws) return;
+
+        clearTimeout(typingTimeout);
+        room.ws.send(JSON.stringify({ type: 'typing', status: true }));
+
+        typingTimeout = setTimeout(() => {
+            room.ws.send(JSON.stringify({ type: 'typing', status: false }));
+        }, 1000);
+
+        // Auto-resize textarea
+        elements.messageInput.style.height = 'auto';
+        elements.messageInput.style.height = elements.messageInput.scrollHeight + 'px';
+    });
+
+    // ===== NEW CHAT =====
+    elements.newChatBtn.addEventListener('click', () => {
+        elements.newChatModal.classList.remove('hidden');
+    });
+
+    elements.generateRoomId.addEventListener('click', () => {
+        const randomId = 'room-' + Math.random().toString(36).substring(2, 10);
+        elements.roomIdInput.value = randomId;
+    });
+
+    elements.joinRoomBtn.addEventListener('click', () => {
+        const roomId = validateInput(elements.roomIdInput.value, 100);
+        const password = validateInput(elements.roomPasswordInput.value, 128);
+
+        if (!roomId || !password) {
+            showToast("Please enter room ID and password");
+            return;
+        }
+
+        joinRoom(roomId, password);
+        elements.roomIdInput.value = '';
+        elements.roomPasswordInput.value = '';
+    });
+
+    elements.cancelNewChat.addEventListener('click', () => {
+        elements.newChatModal.classList.add('hidden');
+    });
+
+    // ===== SETTINGS =====
+    elements.settingsBtn.addEventListener('click', () => {
+        elements.settingsModal.classList.remove('hidden');
+    });
+
+    elements.closeSettings.addEventListener('click', () => {
+        elements.settingsModal.classList.add('hidden');
+    });
+
+    elements.themeToggle.addEventListener('click', () => {
+        state.theme = state.theme === 'light' ? 'dark' : 'light';
+        applyTheme();
+    });
+
+    elements.logoutBtn.addEventListener('click', async () => {
+        await apiCall('/api/logout', 'POST');
+        localStorage.clear();
+        location.reload();
+    });
+
+    elements.exportDataBtn.addEventListener('click', async () => {
+        try {
+            const history = await apiCall(`/api/history/${state.userId}`, 'GET');
+            const exportData = {
+                username: state.currentUser,
+                exported_at: new Date().toISOString(),
+                rooms: history
+            };
+
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `securechat-export-${state.currentUser}-${Date.now()}.json`;
+            a.click();
+            showToast("Data exported successfully");
+        } catch (err) {
+            showToast("Export failed");
+        }
+    });
+
+    elements.deleteAccountBtn.addEventListener('click', async () => {
+        if (!confirm("Are you sure? This will permanently delete your account and all data. This cannot be undone.")) {
+            return;
+        }
+
+        try {
+            await apiCall('/api/delete-account', 'POST');
+            showToast("Account deleted");
+            localStorage.clear();
+            setTimeout(() => location.reload(), 2000);
+        } catch (err) {
+            showToast("Delete failed");
+        }
+    });
+
+    // ===== LOAD CHAT HISTORY =====
+    const loadChatHistory = async () => {
+        try {
+            const rooms = await apiCall(`/api/history/${state.userId}`, 'GET');
+            // Just display the room list, don't auto-join
+            // User can click to join with password
+        } catch (err) {
+            console.error('Failed to load history');
+        }
+    };
+
+    // ===== SEARCH (MED-2 FIX) =====
+    elements.searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase();
+        document.querySelectorAll('.chat-item').forEach(item => {
+            const name = item.querySelector('.chat-item-name').textContent.toLowerCase();
+            item.style.display = name.includes(query) ? '' : 'none';
+        });
+    });
+
+    // ===== MOBILE RESPONSIVENESS =====
+    elements.backBtn.addEventListener('click', () => {
+        elements.sidebar.classList.remove('active');
+    });
+
+    // Check if user is already logged in
+    if (state.currentUser) {
+        elements.loginScreen.classList.add('hidden');
+        elements.chatScreen.classList.remove('hidden');
     }
 });
-

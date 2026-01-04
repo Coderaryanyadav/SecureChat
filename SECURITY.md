@@ -12,7 +12,7 @@
 If you discover a security vulnerability within this project, please **do not** create a public issue. Instead, please report it through one of the following channels:
 
 - **Email**: security-ghost@example.com (Placeholder)
-- **GitHub**: Use the "Report a vulnerability" button if enabled.
+- **GitHub**: Use the "Report a vulnerability" button .
 
 ## Security Controls Implemented
 
