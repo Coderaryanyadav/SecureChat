@@ -527,12 +527,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let html = '';
 
-        // Reply preview
+        // Reply preview - Premium Style
         if (message.reply_to) {
-            html += `<div class="message-reply-preview">Replying to previous message</div>`;
+            html += `
+                <div class="message-reply-preview">
+                    <div style="font-weight: 700; font-size: 11px; color: var(--accent);">REPLY</div>
+                    <div style="font-size: 13px; opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        ${sanitizeHTML(message.reply_content || 'Original message')}
+                    </div>
+                </div>`;
         }
 
-        // Sender (for incoming messages)
+        // Sender (for incoming messages) - Refined
         if (!isOwn) {
             html += `<div class="message-sender">${sanitizeHTML(message.sender)}</div>`;
         }
@@ -543,7 +549,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Meta (time + status)
         html += `<div class="message-meta">
             <span class="message-time">${formatTime(message.timestamp)}</span>
-            ${isOwn ? '<span class="message-status">✓</span>' : ''}
+            ${isOwn ? '<span class="message-status" style="color: #fff; font-size: 10px;">●</span>' : ''}
         </div>`;
 
         msgDiv.innerHTML = html;
@@ -562,7 +568,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         elements.messagesContainer.appendChild(msgDiv);
-        elements.messagesContainer.scrollTop = elements.messagesContainer.scrollHeight;
+
+        // Smooth scroll to bottom
+        elements.messagesContainer.scrollTo({
+            top: elements.messagesContainer.scrollHeight,
+            behavior: 'smooth'
+        });
     };
 
     const formatTime = (date) => {
@@ -570,11 +581,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const diff = now - date;
 
         if (diff < 60000) return 'Just now';
-        if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
 
-        const hours = date.getHours().toString().padStart(2, '0');
-        const minutes = date.getMinutes().toString().padStart(2, '0');
-        return `${hours}:${minutes}`;
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     };
 
     const startReply = (message) => {
