@@ -17,12 +17,13 @@
     <div id="toast-container"></div>
 
     <!-- GHOST GUIDE (Onboarding) -->
-    <div id="ghost-guide" class="modal hidden">
+    <div id="ghost-guide" class="modal hidden" role="dialog" aria-labelledby="guide-title"
+        aria-describedby="guide-text">
         <div class="modal-content glass-card">
             <h2 id="guide-title" style="color: var(--primary); margin-bottom: 1rem;">Ghost Protocol Initialized</h2>
             <p id="guide-text"
                 style="font-size: 0.95rem; line-height: 1.6; color: var(--text-ghost); margin-bottom: 2rem;">...</p>
-            <button id="guide-next" class="primary-btn">Acknowledge</button>
+            <button id="guide-next" class="primary-btn" aria-label="Acknowledge and continue">Acknowledge</button>
         </div>
     </div>
 
@@ -45,8 +46,9 @@
                     <input type="password" id="acc-pass" placeholder="••••••••">
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <button id="login-btn" class="primary-btn">Manifest</button>
-                    <button id="reg-btn" class="primary-btn"
+                    <button id="login-btn" class="primary-btn"
+                        aria-label="Manifest into your identity">Manifest</button>
+                    <button id="reg-btn" class="primary-btn" aria-label="Register new shadow identity"
                         style="background: rgba(255,255,255,0.05); box-shadow: none;">Register</button>
                 </div>
             </div>
@@ -80,8 +82,10 @@
                     <label>Dimension ID <span class="help-circle"
                             title="Enter an existing Code or make a new one">?</span></label>
                     <div style="display: flex; gap: 10px;">
-                        <input type="text" id="room-id" placeholder="Code (e.g. void-99X)" style="flex: 1;">
+                        <input type="text" id="room-id" placeholder="Code (e.g. void-99X)" style="flex: 1;"
+                            aria-label="Enter Dimension ID">
                         <button id="gen-room" class="icon-btn" title="Randomize"
+                            aria-label="Generate random dimension code"
                             style="background: rgba(167,139,250,0.15); border-radius: 12px; width: 50px;">🎲</button>
                     </div>
                 </div>
@@ -97,8 +101,8 @@
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <button id="join-btn" class="primary-btn">Phase In</button>
-                    <button id="goto-chat" class="primary-btn hidden"
+                    <button id="join-btn" class="primary-btn" aria-label="Phase into dimension">Phase In</button>
+                    <button id="goto-chat" class="primary-btn hidden" aria-label="Return to active dimensions"
                         style="background: rgba(255,255,255,0.05); box-shadow: none;">Active Voids</button>
                 </div>
                 <button id="logout-btn"
@@ -164,11 +168,14 @@
                             </div>
                         </div>
                         <div style="display: flex; align-items: center; gap: 20px;">
-                            <div id="connection-status" class="status-dot"></div>
-                            <button id="copy-info" class="icon-btn" title="Copy Bridge Fragment">📋</button>
-                            <button id="show-qr" class="icon-btn" title="Bridge QR">🔍</button>
-                            <button id="panic-btn" class="icon-btn" style="color: var(--danger);"
-                                title="SUDDEN VOID">☢️</button>
+                            <div id="connection-status" class="status-dot" role="status" aria-label="Connection Status">
+                            </div>
+                            <button id="copy-info" class="icon-btn" title="Copy Bridge Fragment"
+                                aria-label="Copy invitation details">📋</button>
+                            <button id="show-qr" class="icon-btn" title="Bridge QR"
+                                aria-label="Show bridge QR code">🔍</button>
+                            <button id="panic-btn" class="icon-btn" style="color: var(--danger);" title="SUDDEN VOID"
+                                aria-label="Instant disconnect and wipe local session">☢️</button>
                         </div>
                     </header>
 
@@ -198,10 +205,12 @@
                         <div class="toolbar">
                             <label for="img-input" class="icon-btn" title="Ghost File">📎</label>
                             <input type="file" id="img-input" style="display:none;">
-                            <button id="voice-btn" class="icon-btn" title="Voice Fragment">🎤</button>
-                            <button id="emoji-btn" class="icon-btn">😊</button>
-                            <button id="destruct-toggle" class="icon-btn" title="Vanish Timer">⌛</button>
-                            <div id="vanish-indicator" class="hidden">VANISH ACTIVE</div>
+                            <button id="voice-btn" class="icon-btn" title="Voice Fragment"
+                                aria-label="Record voice fragment">🎤</button>
+                            <button id="emoji-btn" class="icon-btn" aria-label="Open emoji picker">😊</button>
+                            <button id="destruct-toggle" class="icon-btn" title="Vanish Timer"
+                                aria-label="Toggle self-destruct mode">⌛</button>
+                            <div id="vanish-indicator" class="hidden" role="alert">VANISH ACTIVE</div>
                         </div>
                         <div id="emoji-picker" class="glass-card hidden">
                             <span class="emoji-opt">👻</span><span class="emoji-opt">💀</span><span
@@ -209,10 +218,10 @@
                             <span class="emoji-opt">✨</span><span class="emoji-opt">🌀</span><span
                                 class="emoji-opt">🔥</span><span class="emoji-opt">🌙</span>
                         </div>
-                        <form id="message-form">
-                            <input type="text" id="message-input" placeholder="Type into the void..."
-                                autocomplete="off">
-                            <button type="submit" id="send-btn">✦</button>
+                        <form id="message-form" aria-label="Message composition">
+                            <input type="text" id="message-input" placeholder="Type into the void..." autocomplete="off"
+                                aria-label="Message content">
+                            <button type="submit" id="send-btn" aria-label="Send message">✦</button>
                         </form>
                     </footer>
                 </div>
