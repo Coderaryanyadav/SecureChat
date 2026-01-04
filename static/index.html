@@ -1,237 +1,241 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SecureChat - End-to-End Encrypted Messaging</title>
+    <title>SecureChat | Stealth Communication</title>
     <link rel="stylesheet" href="/static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+        rel="stylesheet">
     <meta name="description" content="Secure, private, end-to-end encrypted messaging">
 </head>
 
-<body data-theme="dark">
-    <!-- Ultra-Premium Background Elements -->
-    <div
-        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; background: radial-gradient(circle at 10% 10%, #001a33 0%, #010101 40%); opacity: 0.8;">
-    </div>
-    <div
-        style="position: fixed; top: -50%; left: -50%; width: 200%; height: 200%; z-index: -1; pointer-events: none; background: url('data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.85\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E'); opacity: 0.05;">
-    </div>
+<body>
+    <!-- Global Background Engine -->
+    <div class="void-bg"></div>
 
     <!-- Login Screen -->
-    <div id="login-screen" class="auth-container">
-        <div class="auth-card">
-            <div class="auth-header">
-                <h1>SecureChat</h1>
-                <p>Private. Encrypted. Invisible.</p>
+    <div id="login-screen" class="auth-viewport">
+        <div class="auth-box">
+            <div class="auth-brand">
+                <div class="logo-symbol"
+                    style="width: 64px; height: 64px; font-size: 32px; border-radius: 20px; box-shadow: 0 10px 40px var(--p-accent-glow);">
+                    S</div>
+                <h1 style="margin-top: 24px; font-size: 48px;">SecureChat</h1>
+                <p>Ultra-Private. End-to-End. Absolute.</p>
             </div>
 
             <div id="login-form">
-                <div class="form-group">
-                    <label for="login-username">Username</label>
-                    <input type="text" id="login-username" placeholder="Enter your username" autocomplete="username">
+                <div class="input-stack">
+                    <input type="text" id="login-username" placeholder="Username" autocomplete="username">
+                    <input type="password" id="login-password" placeholder="Password" autocomplete="current-password">
                 </div>
 
-                <div class="form-group">
-                    <label for="login-password">Password</label>
-                    <input type="password" id="login-password" placeholder="Enter your password"
-                        autocomplete="current-password">
-                </div>
+                <button id="login-btn" class="main-action">Enter the Void</button>
 
-                <button id="login-btn" class="btn btn-primary">Log In</button>
-
-                <div class="link-text">
-                    Don't have an account? <a href="#" id="show-register">Sign up</a>
-                </div>
-
-                <div class="link-text" style="margin-top: 12px; opacity: 0.6;">
-                    <a href="#" id="show-recover" style="font-size: 13px;">Lost your key? Recover account</a>
+                <div class="auth-footer">
+                    <span>New here? <a href="#" id="show-register">Create Identity</a></span>
+                    <a href="#" id="show-recover" class="recover-link">Lost access?</a>
                 </div>
             </div>
 
             <div id="register-form" class="hidden">
-                <div class="form-group">
-                    <label for="register-username">Choose Username</label>
-                    <input type="text" id="register-username" placeholder="Enter username" autocomplete="username">
-                </div>
-
-                <div class="form-group">
-                    <label for="register-password">Choose Password</label>
-                    <input type="password" id="register-password" placeholder="Min 12 characters"
+                <div class="input-stack">
+                    <input type="text" id="register-username" placeholder="Choose Username" autocomplete="username">
+                    <input type="password" id="register-password" placeholder="Choose Password"
                         autocomplete="new-password">
-                    <small style="color: var(--text-muted); font-size: 12px; margin-top: 4px; display: block;">
-                        Must include uppercase, lowercase, number & special character
-                    </small>
                 </div>
 
-                <button id="register-btn" class="btn btn-primary">Create Account</button>
+                <div class="pass-requirement">
+                    Min. 12 chars, upper/lower/num/symbol
+                </div>
 
-                <div class="link-text">
-                    Already have an account? <a href="#" id="show-login">Log in</a>
+                <button id="register-btn" class="main-action">Initialize Identity</button>
+
+                <div class="auth-footer">
+                    <span>Have access? <a href="#" id="show-login">Log In</a></span>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Recovery Modal -->
-    <div id="recovery-modal" class="modal hidden">
-        <div class="modal-content">
-            <div id="recovery-key-display" class="hidden">
-                <h2>Save Your Recovery Key</h2>
-                <p>This is your ONLY way to recover your account if you forget your password. Save it somewhere safe!
-                </p>
-                <div class="recovery-key-box">
-                    <code id="recovery-key-text"></code>
+    <!-- Application Shell -->
+    <div id="chat-screen" class="app-shell hidden">
+        <!-- Rail Navigation (Narrow Left) -->
+        <nav class="app-rail">
+            <div class="rail-top">
+                <div class="rail-item active" title="Chats">💠</div>
+                <div class="rail-item" title="Contacts">👥</div>
+                <div id="settings-btn" class="rail-item" title="Settings">🛠️</div>
+            </div>
+            <div class="rail-bottom">
+                <div id="theme-toggle" class="rail-item" title="Toggle Theme">🌗</div>
+                <div class="user-avatar" id="global-user-avatar">?</div>
+            </div>
+        </nav>
+
+        <!-- Dynamic Content Sidebar -->
+        <aside class="app-sidebar">
+            <div class="sidebar-top">
+                <h3>Chats</h3>
+                <button id="new-chat-btn" class="icon-btn" title="Start Chat">⊕</button>
+            </div>
+
+            <div class="search-wrapper">
+                <input type="text" id="search-input" placeholder="Search conversations...">
+            </div>
+
+            <div id="chat-list" class="sidebar-list">
+                <!-- Dynamically populated -->
+            </div>
+        </aside>
+
+        <!-- Primary Canvas -->
+        <main class="app-canvas">
+            <!-- Empty State -->
+            <div id="empty-state" class="canvas-placeholder">
+                <div class="placeholder-icon"
+                    style="font-size: 80px; margin-bottom: 32px; filter: drop-shadow(0 0 20px var(--p-accent-glow));">🌌
                 </div>
-                <button id="copy-recovery-key" class="btn btn-secondary">Copy Key</button>
-                <button id="close-recovery" class="btn btn-primary">I've Saved It</button>
+                <h2 style="font-size: 32px; margin-bottom: 16px; letter-spacing: -1px;">Secure Dimension</h2>
+                <p style="max-width: 400px; margin: 0 auto 32px; color: var(--p-text-dim); line-height: 1.6;">Initialize
+                    a conversation or select an existing room to begin encrypted transmission within the void.</p>
+                <button id="new-chat-btn-empty" class="main-action" style="max-width: 240px;">Initialize Room</button>
             </div>
 
-            <div id="recovery-form" class="hidden">
-                <h2>Recover Account</h2>
-                <div class="form-group">
-                    <label>Username</label>
-                    <input type="text" id="recover-username">
+            <!-- Active Chat Area -->
+            <div id="active-chat-container" class="active-chat hidden">
+                <header class="chat-header">
+                    <div class="header-info">
+                        <button id="back-btn" class="icon-btn mobile-only">←</button>
+                        <div class="chat-avatar-lg" id="chat-avatar">?</div>
+                        <div class="chat-details">
+                            <h3 id="chat-name">Initialising...</h3>
+                            <span id="chat-status" class="status-label">Updating phantoms...</span>
+                        </div>
+                    </div>
+                    <div class="header-actions">
+                        <button class="icon-btn">🔍</button>
+                        <button class="icon-btn">⋮</button>
+                    </div>
+                </header>
+
+                <div id="messages-container" class="message-canvas">
+                    <!-- Messages flow here -->
                 </div>
-                <div class="form-group">
-                    <label>Recovery Key</label>
-                    <input type="text" id="recover-key">
-                </div>
-                <div class="form-group">
-                    <label>New Password</label>
-                    <input type="password" id="recover-password">
-                </div>
-                <button id="recover-btn" class="btn btn-primary">Recover Account</button>
-                <button id="cancel-recover" class="btn btn-secondary">Cancel</button>
-            </div>
-        </div>
-    </div>
 
-    <!-- Main Chat Interface -->
-    <div id="chat-screen" class="chat-layout hidden">
-        <!-- Sidebar -->
-        <div class="sidebar">
-            <div class="sidebar-header">
-                <h2>Chats</h2>
-                <div class="header-actions">
-                    <button id="theme-toggle" class="icon-btn" title="Toggle theme">🌓</button>
-                    <button id="settings-btn" class="icon-btn" title="Settings">⚙️</button>
-                </div>
-            </div>
+                <!-- Interaction HUD -->
+                <div class="chat-hud">
+                    <div id="reply-preview" class="reply-overlay hidden">
+                        <div class="reply-content">
+                            <span class="reply-user" id="reply-to-user"></span>
+                            <p id="reply-preview-text"></p>
+                        </div>
+                        <button id="cancel-reply" class="close-btn">✕</button>
+                    </div>
 
-            <div class="search-bar">
-                <input type="text" id="search-input" class="search-input" placeholder="Search chats...">
-            </div>
+                    <div id="typing-indicator" class="typing-pill hidden">
+                        <span id="typing-user"></span> is thinking...
+                    </div>
 
-            <div id="chat-list" class="chat-list">
-                <!-- Chat items will be added here dynamically -->
-            </div>
-
-            <div style="padding: 16px; border-top: 1px solid var(--border);">
-                <button id="new-chat-btn" class="btn btn-primary">New Chat</button>
-            </div>
-        </div>
-
-        <!-- Chat Area -->
-        <div class="chat-area">
-            <div class="chat-header">
-                <div class="chat-header-left">
-                    <button id="back-btn" class="icon-btn">←</button>
-                    <div class="avatar" id="chat-avatar">?</div>
-                    <div class="chat-header-info">
-                        <h3 id="chat-name">Select a chat</h3>
-                        <div id="chat-status" class="chat-header-status">Offline</div>
+                    <div class="input-wrapper">
+                        <button id="attach-btn" class="hud-btn">📎</button>
+                        <input type="file" id="file-input" class="hidden">
+                        <textarea id="message-input" placeholder="Type a message..." rows="1"></textarea>
+                        <button id="send-btn" class="send-action">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                            </svg>
+                        </button>
                     </div>
                 </div>
-                <div class="header-actions">
-                    <button id="search-chat-btn" class="icon-btn" title="Search">🔍</button>
-                    <button id="chat-menu-btn" class="icon-btn" title="Menu">⋮</button>
-                </div>
             </div>
+        </main>
+    </div>
 
-            <div id="messages-container" class="messages-container">
-                <!-- Messages will be added here -->
+    <!-- Modals (Centralised System) -->
+    <div id="system-overlay" class="modal-overlay hidden">
+        <!-- New Room Modal -->
+        <div id="new-chat-modal" class="system-modal hidden">
+            <div class="modal-header">
+                <h2>Initialize Room</h2>
+                <button class="close-modal">✕</button>
             </div>
-
-            <div id="reply-preview" class="hidden"
-                style="padding: 12px 20px; background: var(--bg-primary); border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
-                <div style="flex: 1;">
-                    <div style="font-size: 12px; color: var(--primary); font-weight: 600; margin-bottom: 2px;">Replying
-                        to <span id="reply-to-user"></span></div>
-                    <div id="reply-preview-text"
-                        style="font-size: 13px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            <div class="modal-body">
+                <div class="field">
+                    <label>Dimensional ID</label>
+                    <div class="input-with-action">
+                        <input type="text" id="room-id-input" placeholder="e.g. shadow-7">
+                        <button id="generate-room-id">Auto</button>
                     </div>
                 </div>
-                <button id="cancel-reply" class="icon-btn">✕</button>
+                <div class="field">
+                    <label>Access Seal (Password)</label>
+                    <input type="password" id="room-password-input" placeholder="Required for encryption">
+                </div>
+                <button id="join-room-btn" class="main-action">Open Dimension</button>
             </div>
+        </div>
 
-            <div id="typing-indicator" class="hidden"
-                style="padding: 8px 20px; background: var(--bg-primary); border-top: 1px solid var(--border);">
-                <span style="font-size: 13px; color: var(--text-secondary);"><span id="typing-user"></span> is
-                    typing...</span>
+        <!-- Settings Modal -->
+        <div id="settings-modal" class="system-modal hidden">
+            <div class="modal-header">
+                <h2>System Settings</h2>
+                <button class="close-modal">✕</button>
             </div>
+            <div class="modal-body">
+                <div class="setting-item">
+                    <span>Identity Export</span>
+                    <button id="export-data-btn" class="btn-sm">Export</button>
+                </div>
+                <div class="setting-item">
+                    <span>Theme Mode</span>
+                    <button id="modal-theme-toggle" class="btn-sm">Switch</button>
+                </div>
+                <div class="setting-item critical">
+                    <span>Identity Purge</span>
+                    <button id="delete-account-btn" class="btn-sm danger">Purge</button>
+                </div>
+                <div class="modal-logout-zone">
+                    <button id="logout-btn" class="btn-ghost">Disconnect Session</button>
+                </div>
+            </div>
+        </div>
 
-            <div class="input-area">
-                <div class="input-container">
-                    <button id="attach-btn" class="icon-btn" title="Attach file">📎</button>
-                    <input type="file" id="file-input" class="hidden" accept="image/*,video/*">
-                    <textarea id="message-input" class="input-field" placeholder="Type a message..."
-                        rows="1"></textarea>
-                    <button id="send-btn" class="send-btn" title="Send">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
-                        </svg>
-                    </button>
+        <!-- Recovery Modal -->
+        <div id="recovery-modal" class="system-modal hidden">
+            <div class="modal-header">
+                <h2>Access Recovery</h2>
+            </div>
+            <div class="modal-body">
+                <!-- Transitioning views inside script -->
+                <div id="recovery-key-display" class="hidden">
+                    <p class="warning-text">Store this key. It is your only recovery path.</p>
+                    <div class="key-box">
+                        <code id="recovery-key-text"></code>
+                    </div>
+                    <button id="copy-recovery-key" class="main-action">Copy Key</button>
+                    <button id="close-recovery" class="btn-ghost">Done</button>
+                </div>
+
+                <div id="recovery-form" class="hidden">
+                    <input type="text" id="recover-username" placeholder="Identity">
+                    <input type="text" id="recover-key" placeholder="Recovery Key">
+                    <input type="password" id="recover-password" placeholder="New Access Seal">
+                    <button id="recover-btn" class="main-action">Restore Access</button>
+                    <button id="cancel-recover" class="btn-ghost">Cancel</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- New Chat Modal -->
-    <div id="new-chat-modal" class="modal hidden">
-        <div class="modal-content">
-            <h2>Join Room</h2>
-            <div class="form-group">
-                <label>Room ID</label>
-                <input type="text" id="room-id-input" placeholder="Enter room ID">
-                <button id="generate-room-id" class="btn btn-secondary" style="margin-top: 8px;">Generate Random
-                    ID</button>
-            </div>
-            <div class="form-group">
-                <label>Room Password</label>
-                <input type="password" id="room-password-input" placeholder="Encryption password (min 8 chars)">
-            </div>
-            <button id="join-room-btn" class="btn btn-primary">Join Room</button>
-            <button id="cancel-new-chat" class="btn btn-secondary">Cancel</button>
-        </div>
-    </div>
-
-    <!-- Settings Modal -->
-    <div id="settings-modal" class="modal hidden">
-        <div class="modal-content">
-            <h2>Settings</h2>
-            <div style="display: flex; flex-direction: column; gap: 16px; margin: 24px 0;">
-                <div>
-                    <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 8px;">Account</h3>
-                    <button id="export-data-btn" class="btn btn-secondary">Export My Data</button>
-                    <button id="delete-account-btn" class="btn"
-                        style="background: #dc2626; color: white; margin-top: 8px;">Delete Account</button>
-                </div>
-                <div>
-                    <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 8px;">About</h3>
-                    <p style="font-size: 13px; color: var(--text-secondary);">SecureChat v2.0</p>
-                    <p style="font-size: 13px; color: var(--text-secondary);">End-to-end encrypted messaging</p>
-                </div>
-            </div>
-            <button id="close-settings" class="btn btn-primary">Close</button>
-            <button id="logout-btn" class="btn btn-secondary">Log Out</button>
-        </div>
-    </div>
-
-    <div id="offline-indicator" class="hidden"
-        style="position: fixed; top: 0; left: 0; right: 0; background: #dc2626; color: white; text-align: center; padding: 8px; font-size: 13px; z-index: 1000;">
-        ⚠️ No internet connection
+    <!-- Notifications HUD -->
+    <div id="offline-indicator" class="system-alert hidden">
+        Communication link severed. Reconnecting...
     </div>
 
     <script src="/static/script.js"></script>
