@@ -132,6 +132,23 @@ SecureChat/
 
 ### Production Deployment
 
+#### Railway Deployment (Recommended)
+
+SecureChat is ready to be deployed on [Railway](https://railway.app/).
+
+1. **Connect your GitHub repo** to Railway.
+2. **Environment Variables**: Add the following in Railway's variables tab:
+   - `DATABASE_PATH`: `/app/data/database.db`
+   - `ALLOWED_ORIGINS`: `https://your-railway-url.up.railway.app`
+3. **Mount a Volume**:
+   - Go to your service settings in Railway.
+   - Add a **Volume**.
+   - Set the mount path to `/app/data`.
+   - This ensures your `database.db` persists across deployments.
+4. Railway will automatically detect the `Procfile` and use it to start the service.
+
+#### Manual Production Deployment
+
 For production use, you **must**:
 
 1. **Enable HTTPS**:

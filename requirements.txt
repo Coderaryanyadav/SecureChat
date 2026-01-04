@@ -5,3 +5,8 @@ websockets
 cryptography
 passlib[bcrypt]
 slowapi
+bcrypt
+gunicorn
+alembic
+sqlalchemy
+asyncio

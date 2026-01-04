@@ -123,7 +123,8 @@ def verify_password(p: str, h: str) -> bool:
     except: return False
 
 def get_db():
-    db = sqlite3.connect("database.db", check_same_thread=False)
+    db_path = os.getenv("DATABASE_PATH", "database.db")
+    db = sqlite3.connect(db_path, check_same_thread=False)
     db.execute("PRAGMA journal_mode=WAL")
     db.row_factory = sqlite3.Row
     return db
@@ -155,8 +156,8 @@ async def backup_database():
             os.makedirs('backups', exist_ok=True)
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             backup_file = f'backups/database_backup_{timestamp}.db'
-            
-            shutil.copy2('database.db', backup_file)
+            db_path = os.getenv("DATABASE_PATH", "database.db")
+            shutil.copy2(db_path, backup_file)
             logger.info(f"Database backed up to {backup_file}")
             
             # Rotate: keep last 7 days
