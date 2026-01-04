@@ -24,39 +24,42 @@
             <div id="login-form">
                 <div class="input-stack">
                     <div class="field">
-                        <label for="login-username">Username</label>
+                        <label for="login-username">Username <span class="required">*</span></label>
                         <input type="text" id="login-username" autocomplete="username">
                     </div>
                     <div class="field">
-                        <label for="login-password">Password</label>
+                        <label for="login-password">Password <span class="required">*</span></label>
                         <input type="password" id="login-password" autocomplete="current-password">
                     </div>
                 </div>
 
+                <div class="auth-link-row">
+                    <a href="#" id="show-recover">Forgot your password?</a>
+                </div>
+
                 <button id="login-btn" class="main-action">Log In</button>
 
-                <div class="auth-footer">
-                    <span>Need an account? <a href="#" id="show-register">Register</a></span>
-                    <a href="#" id="show-recover" class="recover-link">Forgot your password?</a>
+                <div class="auth-footer-text">
+                    Need an account? <span id="show-register">Register</span>
                 </div>
             </div>
 
             <div id="register-form" class="hidden">
                 <div class="input-stack">
                     <div class="field">
-                        <label for="register-username">Username</label>
+                        <label for="register-username">Username <span class="required">*</span></label>
                         <input type="text" id="register-username" autocomplete="username">
                     </div>
                     <div class="field">
-                        <label for="register-password">Password</label>
+                        <label for="register-password">Password <span class="required">*</span></label>
                         <input type="password" id="register-password" autocomplete="new-password">
                     </div>
                 </div>
 
                 <button id="register-btn" class="main-action">Continue</button>
 
-                <div class="auth-footer">
-                    <span><a href="#" id="show-login">Already have an account?</a></span>
+                <div class="auth-footer-text">
+                    <span id="show-login">Already have an account?</span>
                 </div>
             </div>
         </div>
@@ -66,41 +69,93 @@
     <div id="chat-screen" class="app-shell hidden">
         <!-- Server Rail (Extreme Left) -->
         <nav class="app-rail">
-            <div class="rail-item active" title="Home">
+            <div class="rail-item discord-home active" title="Direct Messages">
                 <svg width="28" height="20" viewBox="0 0 28 20" fill="currentColor">
                     <path
                         d="M23.0212 1.67671C21.3107 0.864956 19.4805 0.250439 17.5643 0C17.2917 0.490011 16.9839 1.13751 16.7649 1.67671C14.7171 1.3664 12.6841 1.3664 10.6685 1.67671C10.435 1.13751 10.1195 0.490011 9.8516 0C7.9307 0.250439 6.0957 0.864956 4.3824 1.67671C0.9168 6.9463 -0.0163 12.0911 0.4578 17.152C2.7561 18.878 4.9818 19.9231 7.1582 20C7.7027 19.2452 8.1883 18.4285 8.6041 17.5615C7.818 17.259 7.0658 16.8851 6.3533 16.4447C6.5412 16.3079 6.723 16.1623 6.8988 16.0116C11.1685 18.006 15.8596 18.006 20.0818 16.0116C20.2592 16.1623 20.4394 16.3079 20.6273 16.4447C19.9123 16.8851 19.158 17.2618 18.3705 17.5615C18.7863 18.4285 19.2718 19.2452 19.8163 20C21.9953 19.9231 24.2259 18.878 26.5242 17.152C27.0967 11.2359 25.5678 6.15571 23.0212 1.67671ZM9.6738 13.6844C8.3756 13.6844 7.3065 12.4831 7.3065 11.0067C7.3065 9.5303 8.351 8.32891 9.6738 8.32891C11.0061 8.32891 12.0642 9.5303 12.0461 11.0067C12.0461 12.4831 11.0061 13.6844 9.6738 13.6844ZM17.2917 13.6844C15.9935 13.6844 14.9244 12.4831 14.9244 11.0067C14.9244 9.5303 15.9689 8.32891 17.2917 8.32891C18.6241 8.32891 19.6822 9.5303 19.6641 11.0067C19.6641 12.4831 18.6241 13.6844 17.2917 13.6844Z" />
                 </svg>
             </div>
             <div class="rail-sep"></div>
-            <div class="rail-item" title="Add Room">⊕</div>
+            <div class="rail-item server-item" title="Room Dimensions">
+                <span>G</span>
+            </div>
+            <div class="rail-item add-server" id="rai-new-chat-btn" title="Add a Server">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
+                    <path d="M15 10H10V15H8V10H3V8H8V3H10V8H15V10Z" />
+                </svg>
+            </div>
         </nav>
 
-        <!-- Sidebar (Channels) -->
+        <!-- Sidebar (Channels/DMs) -->
         <aside class="app-sidebar">
-            <header class="sidebar-header">
+            <header class="sidebar-header" id="sidebar-header-dropdown">
                 <h3>GhostChat</h3>
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
-                    <path d="M4.5 9.75l3 3 6-6" />
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor" class="header-arrow">
+                    <path d="M4.5 7.5L9 12L13.5 7.5" />
                 </svg>
             </header>
 
             <div class="sidebar-list">
-                <div class="channel-category">Dimension Rooms</div>
-                <div id="chat-list">
+                <div class="sidebar-search-container">
+                    <button class="sidebar-search-btn">Find or start a conversation</button>
+                </div>
+
+                <div class="sidebar-nav-item active">
+                    <svg class="nav-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path
+                            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" />
+                        <path
+                            d="M12 6c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z" />
+                    </svg>
+                    <span>Friends</span>
+                </div>
+                <div class="sidebar-nav-item">
+                    <svg class="nav-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path
+                            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z" />
+                    </svg>
+                    <span>Nitro</span>
+                </div>
+
+                <div class="channel-category-header">
+                    <span>Dimension Rooms</span>
+                    <svg width="12" height="12" viewBox="0 0 18 18" fill="currentColor" class="add-channel-icon"
+                        id="sidebar-new-chat-btn">
+                        <path d="M15 10H10V15H8V10H3V8H8V3H10V8H15V10Z" />
+                    </svg>
+                </div>
+                <div id="chat-list" class="sidebar-channels-list">
                     <!-- Rooms list as Discord Channels -->
                 </div>
             </div>
 
             <!-- User Area -->
             <div class="user-control">
-                <div class="user-avatar" id="global-user-avatar">?</div>
+                <div class="user-avatar-container">
+                    <div class="user-avatar" id="global-user-avatar">?</div>
+                    <div class="status-indicator online"></div>
+                </div>
                 <div class="user-info">
                     <div class="user-tag" id="current-user-tag">Username</div>
-                    <div style="font-size: 12px; color: var(--text-muted);">Online</div>
+                    <div class="user-status">Online</div>
                 </div>
                 <div class="user-actions">
-                    <button id="settings-btn" class="icon-btn" title="User Settings">⚙️</button>
+                    <button class="control-btn" title="Mute"><svg width="20" height="20" viewBox="0 0 24 24"
+                            fill="currentColor">
+                            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
+                            <path
+                                d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+                        </svg></button>
+                    <button class="control-btn" title="Deafen"><svg width="20" height="20" viewBox="0 0 24 24"
+                            fill="currentColor">
+                            <path
+                                d="M12 3c-4.97 0-9 4.03-9 9v7c0 1.1.9 2 2 2h4v-8H5v-1c0-3.87 3.13-7 7-7s7 3.13 7 7v1h-4v8h4c1.1 0 2-.9 2-2v-7c0-4.97-4.03-9-9-9z" />
+                        </svg></button>
+                    <button id="settings-btn" class="control-btn" title="User Settings"><svg width="20" height="20"
+                            viewBox="0 0 24 24" fill="currentColor">
+                            <path
+                                d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
+                        </svg></button>
                 </div>
             </div>
         </aside>
@@ -112,46 +167,106 @@
                 <div class="placeholder-icon">🛸</div>
                 <h2>No Active Signal</h2>
                 <p>Select a room from the sidebar to begin encrypted transmission.</p>
-                <button id="new-chat-btn-empty" class="main-action"
-                    style="width: auto; padding: 10px 20px; margin-top: 20px;">Initialize New Room</button>
+                <button id="new-chat-btn-empty" class="main-action discord-button-style">Initialize New Room</button>
             </div>
 
             <!-- Active Chat Area -->
             <div id="active-chat-container" class="active-chat hidden">
                 <header class="chat-header">
-                    <span class="hash">#</span>
-                    <h3 id="chat-name">general</h3>
-                    <div style="flex: 1;"></div>
-                    <button class="icon-btn">🔔</button>
-                    <button class="icon-btn">📌</button>
-                    <button class="icon-btn">👥</button>
-                    <div class="search-wrapper" style="width: 144px; margin-bottom: 0; padding: 0;">
-                        <input type="text" placeholder="Search" style="padding: 4px 8px; font-size: 12px;">
+                    <div class="header-left">
+                        <span class="hash">#</span>
+                        <h3 id="chat-name">general</h3>
+                    </div>
+                    <div class="header-toolbar">
+                        <button class="toolbar-btn" title="Threads"><svg width="24" height="24" viewBox="0 0 24 24"
+                                fill="currentColor">
+                                <path
+                                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
+                            </svg></button>
+                        <button class="toolbar-btn" title="Notification Settings"><svg width="24" height="24"
+                                viewBox="0 0 24 24" fill="currentColor">
+                                <path
+                                    d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
+                            </svg></button>
+                        <button class="toolbar-btn" title="Pinned Messages"><svg width="24" height="24"
+                                viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M16 9V4l1 1V2H7v3l1-1v5l-1 1v2h2v5l1 1 1-1v-5h2v-2l-1-1z" />
+                            </svg></button>
+                        <button class="toolbar-btn" title="Show Member List" id="member-list-toggle"><svg width="24"
+                                height="24" viewBox="0 0 24 24" fill="currentColor">
+                                <path
+                                    d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.61.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
+                            </svg></button>
+                        <div class="search-bar-container">
+                            <input type="text" placeholder="Search">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="search-icon">
+                                <path
+                                    d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
+                            </svg>
+                        </div>
+                        <button class="toolbar-btn" title="Inbox"><svg width="24" height="24" viewBox="0 0 24 24"
+                                fill="currentColor">
+                                <path
+                                    d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5v-3h3.56c.69 0 1.25-.56 1.25-1.25V14h4.38v.75c0 .69.56 1.25 1.25 1.25H19v3z" />
+                            </svg></button>
+                        <button class="toolbar-btn" title="Help"><svg width="24" height="24" viewBox="0 0 24 24"
+                                fill="currentColor">
+                                <path
+                                    d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z" />
+                            </svg></button>
                     </div>
                 </header>
 
-                <div id="messages-container" class="message-canvas">
-                    <!-- Discord styled messages -->
-                </div>
-
-                <div class="chat-hud">
-                    <div id="typing-indicator" class="typing-pill hidden">
-                        <span id="typing-user"></span> is typing...
-                    </div>
-
-                    <div id="reply-preview" class="reply-overlay hidden">
-                        <div class="reply-content">
-                            <span>Replying to <strong id="reply-to-user"></strong></span>
-                            <p id="reply-preview-text"></p>
+                <div class="chat-content-row">
+                    <div class="chat-main-column">
+                        <div id="messages-container" class="message-canvas">
+                            <!-- Discord styled messages -->
                         </div>
-                        <button id="cancel-reply">✕</button>
+
+                        <div class="chat-hud">
+                            <div id="reply-preview" class="reply-overlay hidden">
+                                <div class="reply-content">
+                                    <span>Replying to <span id="reply-to-user"></span></span>
+                                    <p id="reply-preview-text"></p>
+                                </div>
+                                <button id="cancel-reply">×</button>
+                            </div>
+
+                            <div class="input-wrapper">
+                                <button id="attach-btn" class="input-action-btn attach-action">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                        <path
+                                            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z" />
+                                    </svg>
+                                </button>
+                                <input type="file" id="file-input" class="hidden">
+                                <textarea id="message-input" placeholder="Message #general" rows="1"></textarea>
+                                <div class="input-toolbar">
+                                    <button class="input-action-btn"><svg width="24" height="24" viewBox="0 0 24 24"
+                                            fill="currentColor">
+                                            <path
+                                                d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9H9V9h10v2zm-4 4H9v-2h6v2zm4-8H9V5h10v2z" />
+                                        </svg></button>
+                                    <button class="input-action-btn"><svg width="24" height="24" viewBox="0 0 24 24"
+                                            fill="currentColor">
+                                            <path
+                                                d="M12 2c-5.52 0-10 4.48-10 10s4.48 10 10 10 10-4.48 10-10-4.48-10-10-10zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5-1.5.67-1.5 1.5.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5-1.5.67-1.5 1.5.67 1.5 1.5 1.5zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5h-10.22c.8 2.04 2.78 3.5 5.11 3.5z" />
+                                        </svg></button>
+                                </div>
+                            </div>
+                            <div id="typing-indicator" class="typing-pill hidden">
+                                <span id="typing-user" class="bold"></span> is typing...
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="input-wrapper">
-                        <button id="attach-btn" class="hud-btn">⊕</button>
-                        <input type="file" id="file-input" class="hidden">
-                        <textarea id="message-input" placeholder="Message #general" rows="1"></textarea>
-                    </div>
+                    <!-- Member List (Discord Right Sidebar) -->
+                    <aside class="member-sidebar" id="member-sidebar">
+                        <div class="member-group">ONLINE — 0</div>
+                        <div id="member-list" class="member-list">
+                            <!-- Members dynamically populated -->
+                        </div>
+                    </aside>
                 </div>
             </div>
         </main>
@@ -161,48 +276,76 @@
     <div id="system-overlay" class="modal-overlay hidden">
         <!-- New Room Modal -->
         <div id="new-chat-modal" class="system-modal hidden">
-            <div class="modal-header">
-                <h2>Initialize Room</h2>
-            </div>
-            <div class="modal-body">
-                <div class="field">
-                    <label>Room ID</label>
-                    <div class="input-with-action">
-                        <input type="text" id="room-id-input" placeholder="e.g. shadow-dimension">
-                        <button id="generate-room-id">Auto</button>
+            <div class="modal-content-discord">
+                <div class="modal-header">
+                    <h2>Create a Room</h2>
+                    <p>Your room is where you and your friends hang out. Make yours and start talking.</p>
+                </div>
+                <div class="modal-body">
+                    <div class="field">
+                        <label>ROOM NAME</label>
+                        <div class="input-with-action">
+                            <input type="text" id="room-id-input" placeholder="shadow-dimension">
+                            <button id="generate-room-id" class="discord-btn-secondary">Auto</button>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label>ENCRYPTION PASSWORD</label>
+                        <input type="password" id="room-password-input">
                     </div>
                 </div>
-                <div class="field">
-                    <label>Encryption Password</label>
-                    <input type="password" id="room-password-input">
+                <div class="modal-footer">
+                    <button class="btn-ghost close-modal">Back</button>
+                    <button id="join-room-btn" class="main-action discord-button-style">Create Room</button>
                 </div>
-                <button id="join-room-btn" class="main-action">Open Dimension</button>
-                <button class="btn-ghost close-modal" style="width: 100%; margin-top: 8px;">Cancel</button>
             </div>
         </div>
 
-        <!-- Settings Modal -->
-        <div id="settings-modal" class="system-modal hidden">
-            <div class="modal-header">
-                <h2>User Settings</h2>
+        <!-- Settings Modal (Full Screen Discord Style) -->
+        <div id="settings-modal" class="settings-view hidden">
+            <div class="settings-sidebar">
+                <div class="settings-sidebar-list">
+                    <div class="sidebar-header-label">USER SETTINGS</div>
+                    <div class="sidebar-item active">My Account</div>
+                    <div class="sidebar-item">Profiles</div>
+                    <div class="sidebar-item">Privacy & Safety</div>
+                    <div class="sidebar-sep"></div>
+                    <div class="sidebar-item" id="export-data-btn">Export Data</div>
+                    <div class="sidebar-item danger" id="delete-account-btn">Delete Account</div>
+                    <div class="sidebar-sep"></div>
+                    <div class="sidebar-item danger" id="logout-btn">Log Out</div>
+                </div>
             </div>
-            <div class="modal-body">
-                <div class="setting-item">
-                    <span>Export Local Data</span>
-                    <button id="export-data-btn" class="btn-sm">Export</button>
+            <div class="settings-content">
+                <div class="settings-content-box">
+                    <h2>My Account</h2>
+                    <div class="profile-card-replica">
+                        <div class="profile-banner"></div>
+                        <div class="profile-header-area">
+                            <div class="profile-avatar-large">?</div>
+                            <div class="profile-badge-row"></div>
+                        </div>
+                        <div class="profile-body-replica">
+                            <div class="profile-username-area">
+                                <span class="p-username" id="settings-username-display">Username</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="setting-item"
-                    style="border: 1px solid var(--discord-red); background: rgba(218, 55, 60, 0.1);">
-                    <span style="color: var(--discord-red);">Purge Identity</span>
-                    <button id="delete-account-btn" class="btn-sm"
-                        style="background: var(--discord-red);">Purge</button>
-                </div>
-                <div style="margin-top: 20px;">
-                    <button id="logout-btn" class="main-action" style="background: var(--discord-red);">Log Out</button>
-                    <button class="btn-ghost close-modal" style="width: 100%; margin-top: 8px;">Back</button>
+                <div class="close-settings-btn" id="close-settings">
+                    <div class="esc-btn">ESC</div>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                        <path
+                            d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z" />
+                    </svg>
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Alert HUD -->
+    <div id="offline-indicator" class="system-alert hidden">
+        Connection Interrupted. Re-linking in progress...
     </div>
 
     <script src="/static/script.js"></script>

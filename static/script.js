@@ -1,6 +1,6 @@
 /**
- * SecureChat v3.0 - The Discord Replica Engine
- * Full functional replica of Discord's UI/UX
+ * SecureChat v3.5 - The Ultra-Replica Engine
+ * Replicating Discord at any cost
  */
 document.addEventListener('DOMContentLoaded', () => {
     const $ = id => document.getElementById(id);
@@ -14,22 +14,14 @@ document.addEventListener('DOMContentLoaded', () => {
         return div.innerHTML;
     };
 
-    const validatePassword = (password) => {
-        const errors = [];
-        if (password.length < 12) errors.push("Password must be at least 12 characters");
-        if (!/[A-Z]/.test(password)) errors.push("Must contain uppercase letter");
-        if (!/[a-z]/.test(password)) errors.push("Must contain lowercase letter");
-        if (!/[0-9]/.test(password)) errors.push("Must contain number");
-        return errors;
-    };
-
     // --- STATE ENGINE ---
     const state = {
         currentUser: localStorage.getItem('sc_username') || null,
         rooms: JSON.parse(localStorage.getItem('sc_rooms') || '{}'),
         activeRoom: null,
         isOnline: navigator.onLine,
-        ws: null
+        ws: null,
+        memberListVisible: true
     };
 
     // --- ELEMENTS ---
@@ -47,23 +39,34 @@ document.addEventListener('DOMContentLoaded', () => {
         systemOverlay: $('system-overlay'),
         newChatModal: $('new-chat-modal'),
         settingsModal: $('settings-modal'),
-        offlineIndicator: $('offline-indicator'),
         activeChat: $('active-chat-container'),
         emptyState: $('empty-state'),
         typingPill: $('typing-indicator'),
-        replyOverlay: $('reply-preview')
+        replyOverlay: $('reply-preview'),
+        memberSidebar: $('member-sidebar'),
+        memberList: $('member-list'),
+        memberListToggle: $('member-list-toggle'),
+        closeSettings: $('close-settings'),
+        settingsUsername: $('settings-username-display')
     };
 
-    // --- MODAL SYSTEM ---
+    // --- MODAL & SETTINGS SYSTEM ---
     const showModal = (id) => {
         elements.systemOverlay.classList.remove('hidden');
-        $$('.system-modal').forEach(m => m.classList.add('hidden'));
+        $$('.system-modal, .settings-view').forEach(m => m.classList.add('hidden'));
         $(id).classList.remove('hidden');
     };
     const hideModal = () => elements.systemOverlay.classList.add('hidden');
-    $$('.close-modal').forEach(b => b.addEventListener('click', hideModal));
 
-    // --- CRYPTO ENGINE (RE-USED) ---
+    $$('.close-modal').forEach(b => b.addEventListener('click', hideModal));
+    elements.closeSettings.addEventListener('click', hideModal);
+
+    // Handle ESC key for settings
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') hideModal();
+    });
+
+    // --- CRYPTO ENGINE ---
     const deriveKey = async (password, salt) => {
         const encoder = new TextEncoder();
         const baseKey = await crypto.subtle.importKey("raw", encoder.encode(password), "PBKDF2", false, ["deriveKey"]);
@@ -137,6 +140,19 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.msgContainer.innerHTML = '';
         state.rooms[rid].messages.forEach(renderMessage);
         updateSidebar();
+        updateMemberList();
+    };
+
+    const updateMemberList = () => {
+        elements.memberList.innerHTML = '';
+        // In local state, we only know ourselves for now
+        const me = document.createElement('div');
+        me.className = 'member-item';
+        me.innerHTML = `
+            <div class="avatar" style="background-color: ${stringToColor(state.currentUser)}">${state.currentUser[0].toUpperCase()}</div>
+            <div class="member-name">${state.currentUser}</div>
+        `;
+        elements.memberList.appendChild(me);
     };
 
     // --- WEBSOCKET ---
@@ -159,6 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.loginScreen.classList.add('hidden');
         elements.appShell.classList.remove('hidden');
         elements.userTag.textContent = state.currentUser;
+        elements.settingsUsername.textContent = state.currentUser;
         elements.globalAvatar.textContent = state.currentUser[0].toUpperCase();
         elements.globalAvatar.style.backgroundColor = stringToColor(state.currentUser);
         connectWS();
@@ -179,6 +196,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    elements.registerBtn.addEventListener('click', async () => {
+        const res = await fetch('/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: $('register-username').value, password: $('register-password').value })
+        });
+        const data = await res.json();
+        if (data.status === 'ok') {
+            state.currentUser = $('register-username').value;
+            localStorage.setItem('sc_username', state.currentUser);
+            showApp();
+        }
+    });
+
     // --- ROOM ACTIONS ---
     $('join-room-btn').addEventListener('click', () => {
         const rid = $('room-id-input').value;
@@ -191,12 +222,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    $('new-chat-btn').addEventListener('click', () => showModal('new-chat-modal'));
-    $('new-chat-btn-empty').addEventListener('click', () => showModal('new-chat-modal'));
-    $('settings-btn').addEventListener('click', () => showModal('settings-modal'));
-    $('logout-btn').addEventListener('click', () => {
-        localStorage.clear();
-        location.reload();
+    // Switch between Login/Register
+    $('show-register').addEventListener('click', () => {
+        $('login-form').classList.add('hidden');
+        $('register-form').classList.remove('hidden');
+    });
+    $('show-login').addEventListener('click', () => {
+        $('register-form').classList.add('hidden');
+        $('login-form').classList.remove('hidden');
+    });
+
+    $('sidebar-new-chat-btn').addEventListener('click', () => showModal('new-chat-modal'));
+    $('rai-new-chat-btn').addEventListener('click', () => showModal('new-chat-modal'));
+    elements.settingsBtn.addEventListener('click', () => showModal('settings-modal'));
+
+    // Toggle Member List
+    elements.memberListToggle.addEventListener('click', () => {
+        state.memberListVisible = !state.memberListVisible;
+        elements.memberSidebar.classList.toggle('hidden', !state.memberListVisible);
     });
 
     // --- MESSAGE SENDING ---
