@@ -132,6 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     window.addEventListener('online', updateOnlineStatus);
     window.addEventListener('offline', updateOnlineStatus);
+    updateOnlineStatus(); // Set initial state
 
     // ===== NOTIFICATIONS (MED-9 FIX) =====
     if (Notification.permission === "default") {
@@ -527,62 +528,57 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let html = '';
 
-        // Reply preview - Premium Style
+        // Reply Engine - Liquid Tech Styling
         if (message.reply_to) {
             html += `
-                <div class="message-reply-preview">
-                    <div style="font-weight: 700; font-size: 11px; color: var(--accent);">REPLY</div>
+                <div class="message-reply-preview" style="background: rgba(0,0,0,0.2); border-left: 3px solid var(--accent); padding: 8px 12px; border-radius: 8px; margin-bottom: 10px;">
+                    <div style="font-weight: 700; font-size: 10px; color: var(--accent); text-transform: uppercase;">REPLYING TO</div>
                     <div style="font-size: 13px; opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                         ${sanitizeHTML(message.reply_content || 'Original message')}
                     </div>
                 </div>`;
         }
 
-        // Sender (for incoming messages) - Refined
+        // Kinetic Sender Label
         if (!isOwn) {
             html += `<div class="message-sender">${sanitizeHTML(message.sender)}</div>`;
         }
 
-        // Content
+        // Logic Content
         html += `<div class="message-content">${sanitizeHTML(message.content)}</div>`;
 
-        // Meta (time + status)
+        // Sensory Meta
         html += `<div class="message-meta">
             <span class="message-time">${formatTime(message.timestamp)}</span>
-            ${isOwn ? '<span class="message-status" style="color: #fff; font-size: 10px;">●</span>' : ''}
+            ${isOwn ? `<span class="message-status" title="Secured via AES-GCM">SECURED</span>` : ''}
         </div>`;
 
         msgDiv.innerHTML = html;
 
-        // Context menu for reply
+        // Contextual Interaction
         msgDiv.addEventListener('contextmenu', (e) => {
             e.preventDefault();
             startReply(message);
         });
 
-        // Double click to edit own messages
+        // Double Tap to Recalibrate (Edit)
         if (isOwn) {
-            msgDiv.addEventListener('dblclick', () => {
-                editMessage(message);
-            });
+            msgDiv.addEventListener('dblclick', () => editMessage(message));
         }
 
         elements.messagesContainer.appendChild(msgDiv);
 
-        // Smooth scroll to bottom
-        elements.messagesContainer.scrollTo({
-            top: elements.messagesContainer.scrollHeight,
-            behavior: 'smooth'
-        });
+        // Ultra-Smooth Kinetic Scroll
+        setTimeout(() => {
+            elements.messagesContainer.scrollTo({
+                top: elements.messagesContainer.scrollHeight,
+                behavior: 'smooth'
+            });
+        }, 10);
     };
 
     const formatTime = (date) => {
-        const now = new Date();
-        const diff = now - date;
-
-        if (diff < 60000) return 'Just now';
-
-        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
     };
 
     const startReply = (message) => {
