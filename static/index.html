@@ -1,241 +1,208 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SecureChat | Stealth Communication</title>
+    <title>GhostChat | Secured Dimension</title>
     <link rel="stylesheet" href="/static/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <meta name="description" content="Secure, private, end-to-end encrypted messaging">
 </head>
 
 <body>
-    <!-- Global Background Engine -->
-    <div class="void-bg"></div>
-
-    <!-- Login Screen -->
+    <!-- Login Screen (Discord Style) -->
     <div id="login-screen" class="auth-viewport">
         <div class="auth-box">
             <div class="auth-brand">
-                <div class="logo-symbol"
-                    style="width: 64px; height: 64px; font-size: 32px; border-radius: 20px; box-shadow: 0 10px 40px var(--p-accent-glow);">
-                    S</div>
-                <h1 style="margin-top: 24px; font-size: 48px;">SecureChat</h1>
-                <p>Ultra-Private. End-to-End. Absolute.</p>
+                <h1>Welcome back!</h1>
+                <p>We're so excited to see you again!</p>
             </div>
 
             <div id="login-form">
                 <div class="input-stack">
-                    <input type="text" id="login-username" placeholder="Username" autocomplete="username">
-                    <input type="password" id="login-password" placeholder="Password" autocomplete="current-password">
+                    <div class="field">
+                        <label for="login-username">Username</label>
+                        <input type="text" id="login-username" autocomplete="username">
+                    </div>
+                    <div class="field">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" autocomplete="current-password">
+                    </div>
                 </div>
 
-                <button id="login-btn" class="main-action">Enter the Void</button>
+                <button id="login-btn" class="main-action">Log In</button>
 
                 <div class="auth-footer">
-                    <span>New here? <a href="#" id="show-register">Create Identity</a></span>
-                    <a href="#" id="show-recover" class="recover-link">Lost access?</a>
+                    <span>Need an account? <a href="#" id="show-register">Register</a></span>
+                    <a href="#" id="show-recover" class="recover-link">Forgot your password?</a>
                 </div>
             </div>
 
             <div id="register-form" class="hidden">
                 <div class="input-stack">
-                    <input type="text" id="register-username" placeholder="Choose Username" autocomplete="username">
-                    <input type="password" id="register-password" placeholder="Choose Password"
-                        autocomplete="new-password">
+                    <div class="field">
+                        <label for="register-username">Username</label>
+                        <input type="text" id="register-username" autocomplete="username">
+                    </div>
+                    <div class="field">
+                        <label for="register-password">Password</label>
+                        <input type="password" id="register-password" autocomplete="new-password">
+                    </div>
                 </div>
 
-                <div class="pass-requirement">
-                    Min. 12 chars, upper/lower/num/symbol
-                </div>
-
-                <button id="register-btn" class="main-action">Initialize Identity</button>
+                <button id="register-btn" class="main-action">Continue</button>
 
                 <div class="auth-footer">
-                    <span>Have access? <a href="#" id="show-login">Log In</a></span>
+                    <span><a href="#" id="show-login">Already have an account?</a></span>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Application Shell -->
+    <!-- Application Shell (Discord Replica) -->
     <div id="chat-screen" class="app-shell hidden">
-        <!-- Rail Navigation (Narrow Left) -->
+        <!-- Server Rail (Extreme Left) -->
         <nav class="app-rail">
-            <div class="rail-top">
-                <div class="rail-item active" title="Chats">💠</div>
-                <div class="rail-item" title="Contacts">👥</div>
-                <div id="settings-btn" class="rail-item" title="Settings">🛠️</div>
+            <div class="rail-item active" title="Home">
+                <svg width="28" height="20" viewBox="0 0 28 20" fill="currentColor">
+                    <path
+                        d="M23.0212 1.67671C21.3107 0.864956 19.4805 0.250439 17.5643 0C17.2917 0.490011 16.9839 1.13751 16.7649 1.67671C14.7171 1.3664 12.6841 1.3664 10.6685 1.67671C10.435 1.13751 10.1195 0.490011 9.8516 0C7.9307 0.250439 6.0957 0.864956 4.3824 1.67671C0.9168 6.9463 -0.0163 12.0911 0.4578 17.152C2.7561 18.878 4.9818 19.9231 7.1582 20C7.7027 19.2452 8.1883 18.4285 8.6041 17.5615C7.818 17.259 7.0658 16.8851 6.3533 16.4447C6.5412 16.3079 6.723 16.1623 6.8988 16.0116C11.1685 18.006 15.8596 18.006 20.0818 16.0116C20.2592 16.1623 20.4394 16.3079 20.6273 16.4447C19.9123 16.8851 19.158 17.2618 18.3705 17.5615C18.7863 18.4285 19.2718 19.2452 19.8163 20C21.9953 19.9231 24.2259 18.878 26.5242 17.152C27.0967 11.2359 25.5678 6.15571 23.0212 1.67671ZM9.6738 13.6844C8.3756 13.6844 7.3065 12.4831 7.3065 11.0067C7.3065 9.5303 8.351 8.32891 9.6738 8.32891C11.0061 8.32891 12.0642 9.5303 12.0461 11.0067C12.0461 12.4831 11.0061 13.6844 9.6738 13.6844ZM17.2917 13.6844C15.9935 13.6844 14.9244 12.4831 14.9244 11.0067C14.9244 9.5303 15.9689 8.32891 17.2917 8.32891C18.6241 8.32891 19.6822 9.5303 19.6641 11.0067C19.6641 12.4831 18.6241 13.6844 17.2917 13.6844Z" />
+                </svg>
             </div>
-            <div class="rail-bottom">
-                <div id="theme-toggle" class="rail-item" title="Toggle Theme">🌗</div>
-                <div class="user-avatar" id="global-user-avatar">?</div>
-            </div>
+            <div class="rail-sep"></div>
+            <div class="rail-item" title="Add Room">⊕</div>
         </nav>
 
-        <!-- Dynamic Content Sidebar -->
+        <!-- Sidebar (Channels) -->
         <aside class="app-sidebar">
-            <div class="sidebar-top">
-                <h3>Chats</h3>
-                <button id="new-chat-btn" class="icon-btn" title="Start Chat">⊕</button>
+            <header class="sidebar-header">
+                <h3>GhostChat</h3>
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
+                    <path d="M4.5 9.75l3 3 6-6" />
+                </svg>
+            </header>
+
+            <div class="sidebar-list">
+                <div class="channel-category">Dimension Rooms</div>
+                <div id="chat-list">
+                    <!-- Rooms list as Discord Channels -->
+                </div>
             </div>
 
-            <div class="search-wrapper">
-                <input type="text" id="search-input" placeholder="Search conversations...">
-            </div>
-
-            <div id="chat-list" class="sidebar-list">
-                <!-- Dynamically populated -->
+            <!-- User Area -->
+            <div class="user-control">
+                <div class="user-avatar" id="global-user-avatar">?</div>
+                <div class="user-info">
+                    <div class="user-tag" id="current-user-tag">Username</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">Online</div>
+                </div>
+                <div class="user-actions">
+                    <button id="settings-btn" class="icon-btn" title="User Settings">⚙️</button>
+                </div>
             </div>
         </aside>
 
-        <!-- Primary Canvas -->
+        <!-- Main Chat Area -->
         <main class="app-canvas">
             <!-- Empty State -->
             <div id="empty-state" class="canvas-placeholder">
-                <div class="placeholder-icon"
-                    style="font-size: 80px; margin-bottom: 32px; filter: drop-shadow(0 0 20px var(--p-accent-glow));">🌌
-                </div>
-                <h2 style="font-size: 32px; margin-bottom: 16px; letter-spacing: -1px;">Secure Dimension</h2>
-                <p style="max-width: 400px; margin: 0 auto 32px; color: var(--p-text-dim); line-height: 1.6;">Initialize
-                    a conversation or select an existing room to begin encrypted transmission within the void.</p>
-                <button id="new-chat-btn-empty" class="main-action" style="max-width: 240px;">Initialize Room</button>
+                <div class="placeholder-icon">🛸</div>
+                <h2>No Active Signal</h2>
+                <p>Select a room from the sidebar to begin encrypted transmission.</p>
+                <button id="new-chat-btn-empty" class="main-action"
+                    style="width: auto; padding: 10px 20px; margin-top: 20px;">Initialize New Room</button>
             </div>
 
             <!-- Active Chat Area -->
             <div id="active-chat-container" class="active-chat hidden">
                 <header class="chat-header">
-                    <div class="header-info">
-                        <button id="back-btn" class="icon-btn mobile-only">←</button>
-                        <div class="chat-avatar-lg" id="chat-avatar">?</div>
-                        <div class="chat-details">
-                            <h3 id="chat-name">Initialising...</h3>
-                            <span id="chat-status" class="status-label">Updating phantoms...</span>
-                        </div>
-                    </div>
-                    <div class="header-actions">
-                        <button class="icon-btn">🔍</button>
-                        <button class="icon-btn">⋮</button>
+                    <span class="hash">#</span>
+                    <h3 id="chat-name">general</h3>
+                    <div style="flex: 1;"></div>
+                    <button class="icon-btn">🔔</button>
+                    <button class="icon-btn">📌</button>
+                    <button class="icon-btn">👥</button>
+                    <div class="search-wrapper" style="width: 144px; margin-bottom: 0; padding: 0;">
+                        <input type="text" placeholder="Search" style="padding: 4px 8px; font-size: 12px;">
                     </div>
                 </header>
 
                 <div id="messages-container" class="message-canvas">
-                    <!-- Messages flow here -->
+                    <!-- Discord styled messages -->
                 </div>
 
-                <!-- Interaction HUD -->
                 <div class="chat-hud">
-                    <div id="reply-preview" class="reply-overlay hidden">
-                        <div class="reply-content">
-                            <span class="reply-user" id="reply-to-user"></span>
-                            <p id="reply-preview-text"></p>
-                        </div>
-                        <button id="cancel-reply" class="close-btn">✕</button>
+                    <div id="typing-indicator" class="typing-pill hidden">
+                        <span id="typing-user"></span> is typing...
                     </div>
 
-                    <div id="typing-indicator" class="typing-pill hidden">
-                        <span id="typing-user"></span> is thinking...
+                    <div id="reply-preview" class="reply-overlay hidden">
+                        <div class="reply-content">
+                            <span>Replying to <strong id="reply-to-user"></strong></span>
+                            <p id="reply-preview-text"></p>
+                        </div>
+                        <button id="cancel-reply">✕</button>
                     </div>
 
                     <div class="input-wrapper">
-                        <button id="attach-btn" class="hud-btn">📎</button>
+                        <button id="attach-btn" class="hud-btn">⊕</button>
                         <input type="file" id="file-input" class="hidden">
-                        <textarea id="message-input" placeholder="Type a message..." rows="1"></textarea>
-                        <button id="send-btn" class="send-action">
-                            <svg viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-                            </svg>
-                        </button>
+                        <textarea id="message-input" placeholder="Message #general" rows="1"></textarea>
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- Modals (Centralised System) -->
+    <!-- Modals -->
     <div id="system-overlay" class="modal-overlay hidden">
         <!-- New Room Modal -->
         <div id="new-chat-modal" class="system-modal hidden">
             <div class="modal-header">
                 <h2>Initialize Room</h2>
-                <button class="close-modal">✕</button>
             </div>
             <div class="modal-body">
                 <div class="field">
-                    <label>Dimensional ID</label>
+                    <label>Room ID</label>
                     <div class="input-with-action">
-                        <input type="text" id="room-id-input" placeholder="e.g. shadow-7">
+                        <input type="text" id="room-id-input" placeholder="e.g. shadow-dimension">
                         <button id="generate-room-id">Auto</button>
                     </div>
                 </div>
                 <div class="field">
-                    <label>Access Seal (Password)</label>
-                    <input type="password" id="room-password-input" placeholder="Required for encryption">
+                    <label>Encryption Password</label>
+                    <input type="password" id="room-password-input">
                 </div>
                 <button id="join-room-btn" class="main-action">Open Dimension</button>
+                <button class="btn-ghost close-modal" style="width: 100%; margin-top: 8px;">Cancel</button>
             </div>
         </div>
 
         <!-- Settings Modal -->
         <div id="settings-modal" class="system-modal hidden">
             <div class="modal-header">
-                <h2>System Settings</h2>
-                <button class="close-modal">✕</button>
+                <h2>User Settings</h2>
             </div>
             <div class="modal-body">
                 <div class="setting-item">
-                    <span>Identity Export</span>
+                    <span>Export Local Data</span>
                     <button id="export-data-btn" class="btn-sm">Export</button>
                 </div>
-                <div class="setting-item">
-                    <span>Theme Mode</span>
-                    <button id="modal-theme-toggle" class="btn-sm">Switch</button>
+                <div class="setting-item"
+                    style="border: 1px solid var(--discord-red); background: rgba(218, 55, 60, 0.1);">
+                    <span style="color: var(--discord-red);">Purge Identity</span>
+                    <button id="delete-account-btn" class="btn-sm"
+                        style="background: var(--discord-red);">Purge</button>
                 </div>
-                <div class="setting-item critical">
-                    <span>Identity Purge</span>
-                    <button id="delete-account-btn" class="btn-sm danger">Purge</button>
-                </div>
-                <div class="modal-logout-zone">
-                    <button id="logout-btn" class="btn-ghost">Disconnect Session</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Recovery Modal -->
-        <div id="recovery-modal" class="system-modal hidden">
-            <div class="modal-header">
-                <h2>Access Recovery</h2>
-            </div>
-            <div class="modal-body">
-                <!-- Transitioning views inside script -->
-                <div id="recovery-key-display" class="hidden">
-                    <p class="warning-text">Store this key. It is your only recovery path.</p>
-                    <div class="key-box">
-                        <code id="recovery-key-text"></code>
-                    </div>
-                    <button id="copy-recovery-key" class="main-action">Copy Key</button>
-                    <button id="close-recovery" class="btn-ghost">Done</button>
-                </div>
-
-                <div id="recovery-form" class="hidden">
-                    <input type="text" id="recover-username" placeholder="Identity">
-                    <input type="text" id="recover-key" placeholder="Recovery Key">
-                    <input type="password" id="recover-password" placeholder="New Access Seal">
-                    <button id="recover-btn" class="main-action">Restore Access</button>
-                    <button id="cancel-recover" class="btn-ghost">Cancel</button>
+                <div style="margin-top: 20px;">
+                    <button id="logout-btn" class="main-action" style="background: var(--discord-red);">Log Out</button>
+                    <button class="btn-ghost close-modal" style="width: 100%; margin-top: 8px;">Back</button>
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- Notifications HUD -->
-    <div id="offline-indicator" class="system-alert hidden">
-        Communication link severed. Reconnecting...
     </div>
 
     <script src="/static/script.js"></script>
