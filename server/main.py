@@ -20,6 +20,7 @@ logger = logging.getLogger("GhostOracle")
 
 limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(title="GhostChat Oracle Prime")
+
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
@@ -65,6 +66,7 @@ class GhostDimension:
 class DimensionRegistry:
     def __init__(self):
         self.rooms: Dict[str, GhostDimension] = {}
+        self.MAX_PARTICIPANTS = 50  # Limit per dimension
 
     async def broadcast(self, room_id: str, data: dict, exclude: Optional[WebSocket] = None):
         if room_id in self.rooms:
@@ -82,6 +84,11 @@ class DimensionRegistry:
             return False
         if not room:
             room = self.rooms[rid] = GhostDimension(rid, pwd, user)
+        
+        if len(room.connections) >= self.MAX_PARTICIPANTS:
+            await ws.send_json({"type": "error", "message": "Dimension at Maximum Capacity"})
+            return False
+
         if any(u == user for u in room.connections.values()):
             await ws.send_json({"type": "error", "message": "Handle already manifest"})
             return False
@@ -96,10 +103,14 @@ class DimensionRegistry:
             room = self.rooms[rid]
             if ws in room.connections:
                 user = room.connections.pop(ws)
+                # Clear typing status for this user
+                await self.broadcast(rid, {"type": "typing", "username": user, "status": False}, exclude=ws)
+                
                 if not room.connections: self.rooms.pop(rid)
                 else:
                     if user == room.admin:
                         room.admin = next(iter(room.connections.values()))
+                        await self.broadcast(rid, {"type": "system", "content": f"Guardian vanished. New Guardian: {room.admin}"})
                     await self.broadcast_user_list(rid)
                     await self.broadcast(rid, {"type": "system", "content": f"{user} vanished."})
 
@@ -113,7 +124,7 @@ registry = DimensionRegistry()
 # --- API ---
 @app.post("/api/register")
 @limiter.limit("5/minute")
-async def register(r: Request, d: dict):
+async def register(request: Request, d: dict):
     u, p = d.get("username"), d.get("password")
     if not u or not p: return {"status": "fail", "msg": "Incomplete data"}
     with get_db() as db:
@@ -124,7 +135,7 @@ async def register(r: Request, d: dict):
 
 @app.post("/api/login")
 @limiter.limit("10/minute")
-async def login(r: Request, d: dict):
+async def login(request: Request, d: dict):
     u, p = d.get("username"), d.get("password")
     with get_db() as db:
         res = db.execute("SELECT * FROM users WHERE username = ?", (u,)).fetchone()

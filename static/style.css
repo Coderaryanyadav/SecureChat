@@ -451,3 +451,156 @@ input:focus {
         height: 100vh;
     }
 }
+
+/* AVATAR SELECTOR */
+.av-opt {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.av-opt:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-3px);
+}
+
+.av-opt.active {
+    border-color: var(--primary);
+    background: rgba(167, 139, 250, 0.15);
+    box-shadow: 0 0 20px var(--primary-glow);
+}
+
+/* SYSTEM MESSAGES */
+.system-msg {
+    align-self: center;
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--text-ghost);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin: 10px 0;
+}
+
+.reaction-tag {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 2px 6px;
+    font-size: 0.8rem;
+    margin-right: 4px;
+    display: inline-block;
+}
+
+.msg-img {
+    transition: 0.3s;
+    cursor: zoom-in;
+}
+
+.msg-img:hover {
+    transform: scale(1.02);
+}
+
+.close-tab {
+    background: none;
+    border: none;
+    color: var(--text-ghost);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0 5px;
+}
+
+.close-tab:hover {
+    color: var(--danger);
+}
+
+/* MODAL SYSTEM */
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(25px);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.4s ease;
+}
+
+.modal-content {
+    width: 90%;
+    max-width: 500px;
+    padding: 3rem;
+    text-align: center;
+    animation: modalScaleUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes modalScaleUp {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* LATTICE HANDSHAKE */
+.lattice-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 15000;
+    background: repeating-linear-gradient(45deg,
+            rgba(167, 139, 250, 0.05) 0px,
+            rgba(167, 139, 250, 0.05) 1px,
+            transparent 1px,
+            transparent 10px);
+    opacity: 0;
+    transition: 0.5s;
+}
+
+.lattice-active {
+    opacity: 1;
+    animation: latticePulse 2s infinite;
+}
+
+@keyframes latticePulse {
+    0% {
+        transform: scale(1);
+        opacity: 0.3;
+    }
+
+    50% {
+        transform: scale(1.05);
+        opacity: 0.6;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 0.3;
+    }
+}
+
+.community-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    cursor: pointer;
+}

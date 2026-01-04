@@ -35,20 +35,6 @@
                 </div>
                 <p class="subtitle">Zero-Knowledge Secure Manifestation</p>
 
-                <div id="web3-gate" style="margin-bottom: 2rem;">
-                    <button id="metamask-login" class="primary-btn"
-                        style="background: linear-gradient(135deg, #f6851b, #e2761b); margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: center; gap: 10px;">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" width="24"
-                            height="24"> Connect Wallet
-                    </button>
-                    <div style="display: flex; align-items: center; margin-bottom: 1.5rem;">
-                        <hr style="flex: 1; opacity: 0.1;">
-                        <span style="padding: 0 15px; font-size: 0.7rem; color: var(--text-ghost);">OR SPIRIT
-                            IDENTITY</span>
-                        <hr style="flex: 1; opacity: 0.1;">
-                    </div>
-                </div>
-
                 <div class="form-group">
                     <label>Identity <span class="help-circle" title="Your unique shadow alias">?</span></label>
                     <input type="text" id="acc-user" placeholder="PhantomID">
@@ -88,7 +74,6 @@
                         <span class="av-opt" data-av="🧿">🧿</span>
                         <span class="av-opt" data-av="🔮">🔮</span>
                     </div>
-                    <input type="text" id="username" placeholder="Spectral Handle">
                 </div>
 
                 <div class="form-group">
@@ -137,6 +122,16 @@
                     <h3>ACTIVE VOIDS</h3>
                     <div id="active-rooms-tabs"
                         style="margin-bottom: 2rem; display: flex; flex-direction: column; gap: 15px;"></div>
+
+                    <div id="communities" style="margin-bottom: 2rem;">
+                        <h3 style="color: var(--text-ghost); font-size: 0.65rem;">GHOST COMMUNITIES</h3>
+                        <div id="community-list"
+                            style="display: flex; flex-direction: column; gap: 10px; margin-top: 1rem;">
+                            <div class="community-item"
+                                style="font-size: 0.8rem; opacity: 0.6; padding: 10px; border: 1px dashed var(--glass-border); border-radius: 12px; text-align: center;">
+                                No local clusters found</div>
+                        </div>
+                    </div>
 
                     <div id="room-meta">
                         <h3 style="color: var(--text-ghost); font-size: 0.65rem;">CONNECTED SPIRITS</h3>
@@ -241,7 +236,6 @@
     <audio id="woosh-sound" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3"
         preload="auto"></audio>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
     <script src="script.js"></script>
 </body>
 
