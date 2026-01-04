@@ -1,5 +1,31 @@
 document.addEventListener('DOMContentLoaded', () => {
     const $ = id => document.getElementById(id.replace('#', ''));
+
+    // SECURITY: XSS Protection
+    const sanitizeHTML = (str) => {
+        if (!str) return '';
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    };
+
+    const sanitizeURL = (url) => {
+        try {
+            const parsed = new URL(url);
+            if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+                return url;
+            }
+        } catch { }
+        return '#';
+    };
+
+    const validateInput = (value, type = 'text', maxLength = 1000) => {
+        if (!value || typeof value !== 'string') return '';
+        value = value.trim();
+        if (value.length > maxLength) value = value.substring(0, maxLength);
+        return value;
+    };
+
     const elements = {
         accUser: $('#acc-user'), accPass: $('#acc-pass'), loginBtn: $('#login-btn'), regBtn: $('#reg-btn'),
         roomInput: $('#room-id'), passInput: $('#room-password'), joinBtn: $('#join-btn'),
@@ -169,9 +195,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (dec) {
                     const blob = new Blob([dec]);
                     const url = URL.createObjectURL(blob);
-                    if (type === 'image') html += `<img src="${url}" class="msg-img" style="max-width:100%; border-radius:12px;">`;
-                    else if (subtype === 'voice') html += `<div class="voice-frag">🔊 <audio controls src="${url}" style="height:30px;"></audio></div>`;
-                    else html += `<div class="file-link">📎 <a href="${url}" download="ghost-file" style="color:var(--primary); text-decoration:none; font-weight:800;">FRAGMENT</a></div>`;
+                    // SECURITY: Validate blob URLs and set CSP-compliant attributes
+                    if (type === 'image') html += `<img src="${sanitizeURL(url)}" class="msg-img" style="max-width:100%; border-radius:12px;" loading="lazy" alt="Encrypted image">`;
+                    else if (subtype === 'voice') html += `<div class="voice-frag">🔊 <audio controls src="${sanitizeURL(url)}" style="height:30px;" preload="metadata"></audio></div>`;
+                    else html += `<div class="file-link">📎 <a href="${sanitizeURL(url)}" download="ghost-file" style="color:var(--primary); text-decoration:none; font-weight:800;" rel="noopener noreferrer">FRAGMENT</a></div>`;
                 } else html += `<div style="color:var(--danger); font-size:0.75rem; line-height:1.5;">
                     <div style="font-weight:800; margin-bottom:4px;">⚠️ DECRYPTION FAILED</div>
                     <div style="opacity:0.7;">Wrong encryption seal or corrupted data. Verify you're using the correct room password.</div>
@@ -181,7 +208,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!dec) {
                     html += `<div style="color:var(--danger); font-size:0.75rem; font-style:italic;">⚠️ Message corrupted or wrong seal</div>`;
                 } else {
-                    html += `<div>${dec}</div>`;
+                    // CRITICAL FIX: XSS Protection - Sanitize all user-generated content
+                    html += `<div>${sanitizeHTML(dec)}</div>`;
                 }
             }
 
@@ -202,7 +230,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- AUTH ---
     elements.loginBtn.onclick = async () => {
-        const u = elements.accUser.value.trim(), p = elements.accPass.value.trim(); if (!u || !p) return;
+        // SECURITY: Input validation
+        const u = validateInput(elements.accUser.value, 'username', 50);
+        const p = validateInput(elements.accPass.value, 'password', 128);
+
+        if (!u || !p) {
+            showToast("Username and password required");
+            return;
+        }
+
+        if (u.length < 3) {
+            showToast("Username must be at least 3 characters");
+            return;
+        }
         try {
             const res = await (await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: u, password: p }) })).json();
             if (res.status === 'ok') {
@@ -215,7 +255,24 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     elements.regBtn.onclick = async () => {
-        const u = elements.accUser.value.trim(), p = elements.accPass.value.trim(); if (!u || !p) return;
+        // SECURITY: Input validation for registration
+        const u = validateInput(elements.accUser.value, 'username', 50);
+        const p = validateInput(elements.accPass.value, 'password', 128);
+
+        if (!u || !p) {
+            showToast("Username and password required");
+            return;
+        }
+
+        if (u.length < 3) {
+            showToast("Username must be at least 3 characters");
+            return;
+        }
+
+        if (p.length < 8) {
+            showToast("Password must be at least 8 characters");
+            return;
+        }
         try {
             const res = await (await fetch('/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: u, password: p }) })).json();
             if (res.status === 'ok') showToast("ID Manifested. Now Login.");
@@ -249,8 +306,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- ROOM MANAGEMENT ---
     elements.joinBtn.onclick = async () => {
-        const r = elements.roomInput.value.trim(), p = elements.passInput.value.trim();
-        if (!r || !p) return showToast("Keys required for entry");
+        // SECURITY: Validate room credentials
+        const r = validateInput(elements.roomInput.value, 'roomid', 100);
+        const p = validateInput(elements.passInput.value, 'password', 128);
+
+        if (!r || !p) {
+            showToast("Dimension ID and Encryption Seal required");
+            return;
+        }
+
+        // Validate room ID format (alphanumeric, dashes, underscores only)
+        if (!/^[a-zA-Z0-9-_]+$/.test(r)) {
+            showToast("Invalid Dimension ID format. Use only letters, numbers, dashes, and underscores.");
+            return;
+        }
 
         // PASSWORD VALIDATION
         if (p.length < MIN_PASSWORD_LENGTH) {
