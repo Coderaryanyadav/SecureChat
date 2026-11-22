@@ -53,3 +53,7 @@ htmlcov/
 *.db
 *.sqlite
 *.sqlite3
+
+.venv/
+.vercel/
+.vercel
