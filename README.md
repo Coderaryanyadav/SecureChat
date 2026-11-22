@@ -4,6 +4,7 @@
 
 ### Zero-Knowledge, End-to-End Encrypted Real-Time Messaging Platform
 
+[![Live Demo](https://img.shields.io/badge/Vercel-Live%20Demo-black?style=for-the-badge&logo=vercel&logoColor=white)](https://securechat-rouge.vercel.app)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![Encryption](https://img.shields.io/badge/Encryption-AES--256--GCM-green?style=for-the-badge&logo=lock&logoColor=white)](https://en.wikipedia.org/wiki/Galois/Counter_Mode)
@@ -12,7 +13,7 @@
 
 <br />
 
-**[📖 About](#-about)** • **[📸 Interface](#-interface-preview)** • **[🌟 Features](#-key-features)** • **[🏛️ Architecture](#️-system-architecture)** • **[🔐 Cryptography](#-cryptographic-guarantee)** • **[🚀 Quick Start](#-local-setup--quick-start)** • **[📡 API Docs](#-api-reference)**
+**[🌐 Experience Live Demo](https://securechat-rouge.vercel.app)** • **[📖 About](#-about)** • **[📸 Interface](#-interface-preview)** • **[🌟 Features](#-key-features)** • **[🏛️ Architecture](#️-system-architecture)** • **[🔐 Cryptography](#-cryptographic-guarantee)** • **[🚀 Quick Start](#-local-setup--quick-start)** • **[📡 API Docs](#-api-reference)**
 
 <br />
 
@@ -38,20 +39,42 @@
 
 ## 📖 About
 
-**SecureChat** is an open-source, privacy-first real-time communication platform engineered from the ground up on the principle of **Zero-Knowledge Architecture**.
+**SecureChat** is an open-source, privacy-first real-time messaging platform engineered on the principle of **Zero-Knowledge Architecture** and deployed live on **Vercel**.
 
-In traditional messaging architectures, central servers broker and store plaintext messages, exposing sensitive communications to data breaches, unauthorized server inspections, and man-in-the-middle exploits. **SecureChat fundamentally alters this trust paradigm**:
+In standard messaging platforms, central backend servers ingest and store plaintext messages, exposing user communications to unauthorized database reads, network interception, and insider threats. **SecureChat fundamentally eliminates this vulnerability**:
 
 - **Client-Side Cryptography:** Every message, media payload, and file attachment is encrypted and decrypted strictly inside the client's web browser using native **Web Cryptography (`SubtleCrypto`)**.
 - **Zero Plaintext Ingestion:** The server and database store only high-entropy AES-256-GCM ciphertexts accompanied by cryptographically random 96-bit initialization vectors. 
 - **Zero Server-Side Master Keys:** Encryption keys are derived on the fly from user passphrases using **PBKDF2** with **100,000 iterations of SHA-256**. The backend has no computational capability to decrypt or read transmitted chat streams.
+- **Dual Real-Time Engine:** Seamlessly transitions between full-duplex **WebSockets** (for dedicated VPS/Docker hosts) and HTTP **Serverless Live Sync** (for Vercel serverless functions).
 - **Discord-Inspired Experience:** Delivers an intuitive, desktop-class Discord interface featuring multi-channel navigation, live online member rosters, markdown formatting with JetBrains Mono code highlights, audio feedback cues, and emoji reactions.
 
 ---
 
 ## 🏷️ Topics & Tags
 
-`fastapi` • `end-to-end-encryption` • `e2ee` • `zero-knowledge` • `cryptography` • `aes-256-gcm` • `chat-app` • `chat-application` • `discord-clone` • `realtime` • `websockets` • `python` • `security` • `privacy` • `fullstack` • `asyncio`
+`fastapi` • `end-to-end-encryption` • `e2ee` • `zero-knowledge` • `cryptography` • `aes-256-gcm` • `chat-app` • `chat-application` • `discord-clone` • `realtime` • `websockets` • `python` • `security` • `privacy` • `fullstack` • `asyncio` • `vercel`
+
+---
+
+## 🚀 Live Demo & Deployment
+
+### 🌐 Access Live Production
+The platform is actively deployed and globally accessible on Vercel:  
+👉 **[https://securechat-rouge.vercel.app](https://securechat-rouge.vercel.app)**
+
+### ⚡ Deploy Your Own Instance to Vercel
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/Coderaryanyadav/SecureChat.git
+cd SecureChat
+
+# 2. Deploy via Vercel CLI
+npx vercel --prod
+```
+
+> **Note:** The included [`vercel.json`](vercel.json) routes incoming requests between FastAPI serverless functions and global Edge CDN static delivery.
 
 ---
 
@@ -61,7 +84,7 @@ In traditional messaging architectures, central servers broker and store plainte
 |:---|:---|:---|
 | 🔐 **Security** | Zero-Knowledge E2EE | AES-256-GCM authenticated cipher with unique 96-bit IV per message. |
 | 🔑 **Authentication** | Cryptographic Recovery | 32-character deterministic recovery hex token (no email / third-party trackers). |
-| ⚡ **Real-Time** | Dual Transport Core | Stateful bidirectional **WebSockets** with fallback live polling. |
+| ⚡ **Real-Time** | Dual Transport Core | Stateful bidirectional **WebSockets** with fallback serverless live polling. |
 | 🎨 **UI / UX** | Discord-Inspired Design | Sidebar channels, member presence, custom sound synthesis, and multi-theme engine. |
 | 📝 **Rich Media** | Markdown & Code Highlighting | JetBrains Mono code blocks, inline code, bold, italics, and safe auto-linking. |
 | 📁 **Data Transfer** | Encrypted Attachments | Drag-and-drop & clipboard (`Ctrl+V`) paste with immediate browser encryption. |
@@ -82,9 +105,9 @@ flowchart TD
         Crypto <--> Storage
     end
 
-    subgraph Transport ["Real-Time Transport Layer"]
-        WS["Full-Duplex WebSocket (/ws/{rid}/{user})"]
-        HTTP["Sync Engine (/api/rooms/{rid}/messages)"]
+    subgraph Transport ["Dual Real-Time Transport Layer"]
+        WS["Full-Duplex WebSocket (/ws/{rid}/{user})<br/>(VPS / Docker / Local Host)"]
+        HTTP["Serverless Live Sync (/api/rooms/{rid}/messages)<br/>(Vercel Edge & Serverless Functions)"]
     end
 
     subgraph Backend ["FastAPI Core Engine (Python 3.10+)"]
@@ -136,7 +159,7 @@ Plaintext Message ──▶ [ AES-256-GCM (Key + Random 96-bit IV) ] ──▶ E
 
 ---
 
-## 🚀 Local Setup & Quick Start
+## 💻 Local Setup & Quick Start
 
 ### Prerequisites
 - **Python 3.10+**
