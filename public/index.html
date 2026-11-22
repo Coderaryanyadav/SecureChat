@@ -8,8 +8,11 @@
     <link rel="stylesheet" href="/static/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <meta name="description" content="Secure, private, zero-knowledge end-to-end encrypted messaging with Discord-inspired architecture">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <meta name="description"
+        content="Secure, private, zero-knowledge end-to-end encrypted messaging with Discord-inspired architecture">
     <meta name="theme-color" content="#1e1f22">
 </head>
 
@@ -23,7 +26,8 @@
             <div class="auth-brand">
                 <div class="auth-logo-badge">
                     <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/>
+                        <path
+                            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z" />
                     </svg>
                 </div>
                 <h1 id="auth-title">Welcome back!</h1>
@@ -37,11 +41,13 @@
                 <div class="input-stack">
                     <div class="field">
                         <label for="login-username">Username <span class="required">*</span></label>
-                        <input type="text" id="login-username" autocomplete="username" placeholder="phantom_user" autofocus>
+                        <input type="text" id="login-username" autocomplete="username" placeholder="phantom_user"
+                            autofocus>
                     </div>
                     <div class="field">
                         <label for="login-password">Password <span class="required">*</span></label>
-                        <input type="password" id="login-password" autocomplete="current-password" placeholder="••••••••••••">
+                        <input type="password" id="login-password" autocomplete="current-password"
+                            placeholder="••••••••••••">
                     </div>
                 </div>
 
@@ -61,11 +67,13 @@
                 <div class="input-stack">
                     <div class="field">
                         <label for="register-username">Username <span class="required">*</span></label>
-                        <input type="text" id="register-username" autocomplete="username" placeholder="Choose a handle (3+ chars)">
+                        <input type="text" id="register-username" autocomplete="username"
+                            placeholder="Choose a handle (3+ chars)">
                     </div>
                     <div class="field">
                         <label for="register-password">Password <span class="required">*</span></label>
-                        <input type="password" id="register-password" autocomplete="new-password" placeholder="Minimum 8 characters">
+                        <input type="password" id="register-password" autocomplete="new-password"
+                            placeholder="Minimum 8 characters">
                     </div>
                 </div>
 
@@ -140,7 +148,8 @@
 
             <div class="sidebar-list">
                 <div class="sidebar-search-container">
-                    <input type="text" id="channel-search-input" placeholder="Find or filter channels (Ctrl+K)" style="width:100%; background:var(--bg-tertiary); border:none; border-radius:4px; padding:7px 10px; color:var(--text-normal); font-size:13px;">
+                    <input type="text" id="channel-search-input" placeholder="Find or filter channels (Ctrl+K)"
+                        style="width:100%; background:var(--bg-tertiary); border:none; border-radius:4px; padding:7px 10px; color:var(--text-normal); font-size:13px;">
                 </div>
 
                 <div class="channel-category-header">
@@ -202,7 +211,7 @@
                     <div class="header-left">
                         <button id="mobile-back-to-channels" class="mobile-back-btn" title="Back to Channels">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+                                <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
                             </svg>
                         </button>
                         <span class="hash">#</span>
@@ -258,7 +267,8 @@
                             </div>
 
                             <div class="input-wrapper">
-                                <button id="attach-btn" class="input-action-btn attach-action" title="Attach file or image">
+                                <button id="attach-btn" class="input-action-btn attach-action"
+                                    title="Attach file or image">
                                     <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                                         <path
                                             d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z" />
@@ -269,9 +279,10 @@
                                 <button id="emoji-picker-btn" class="input-action-btn" title="Add emoji">
                                     😊
                                 </button>
-                                <button id="send-msg-btn" class="input-action-btn send-btn-highlight" title="Send message (Enter)">
+                                <button id="send-msg-btn" class="input-action-btn send-btn-highlight"
+                                    title="Send message (Enter)">
                                     <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-                                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
                                     </svg>
                                 </button>
                             </div>
@@ -320,7 +331,8 @@
                 </div>
                 <div class="modal-footer">
                     <button class="btn-ghost close-modal" type="button">Cancel</button>
-                    <button id="join-room-btn" class="main-action discord-button-style" type="button">Enter Room</button>
+                    <button id="join-room-btn" class="main-action discord-button-style" type="button">Enter
+                        Room</button>
                 </div>
             </div>
         </div>
@@ -339,7 +351,8 @@
                     </p>
                 </div>
                 <div class="modal-footer">
-                    <button id="copy-recovery-key-btn" class="main-action discord-button-style" style="width:100%;">Copy Key & Continue</button>
+                    <button id="copy-recovery-key-btn" class="main-action discord-button-style" style="width:100%;">Copy
+                        Key & Continue</button>
                 </div>
             </div>
         </div>

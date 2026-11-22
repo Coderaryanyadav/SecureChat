@@ -17,7 +17,12 @@ A high-performance, zero-knowledge, end-to-end encrypted messaging application c
 - 🌐 **Live on Vercel**: Deployed with hybrid serverless architecture ensuring 99.99% uptime with zero maintenance.
 - 🔐 **Zero-Knowledge End-to-End Encryption**: AES-256-GCM encryption done exclusively client-side. The server never has access to plaintext messages or encryption keys.
 - ⚡ **Dual Real-Time Engine**: Seamlessly switches between full-duplex WebSockets (for VPS/Docker/Local dev) and HTTP Serverless Live Sync (for Vercel serverless functions).
-- 🎮 **Discord-Inspired UI**: Multi-column channel architecture, custom server rail, rich avatars, online member lists, typing status, message replies, and dark theme.
+- 📱 **Adaptive Mobile UI**: Responsive slide-in navigation drawer, touch-optimized headers, and dynamic viewport handling for mobile and desktop alike.
+- 🔊 **Web Audio Synthesizer**: Pure synthetic Web Audio sound effects for sending and receiving messages (with mute toggle).
+- 📝 **Markdown & Code Formatting**: Formatted code blocks (`JetBrains Mono`), inline code, bold, italics, and safe auto-linking.
+- 📁 **Drag-and-Drop & Clipboard Paste**: Drop any image/document or press `Ctrl+V` to immediately encrypt and transmit screenshots.
+- 🎨 **Multi-Theme Engine**: 3 themes built-in: Discord Dark, Midnight OLED, and Cyber Emerald.
+- 💬 **Interactive Reactions & Replies**: Floating message hover bar with quick reactions (❤️, 👍, 🔥), inline reply preview, and 1-click text copy.
 - 🔑 **Cryptographic Account Recovery**: 32-character hex recovery key generated on signup — zero reliance on email verification or third-party trackers.
 - 🛡️ **Fintech-Grade Defense**: Bcrypt salted password hashing (12 rounds), SlowAPI rate limiting, parameterized queries against SQL injection, strict input sanitization, and CSP headers.
 - 📦 **Data Sovereignty (GDPR Ready)**: 1-click JSON data export and permanent account deletion.
