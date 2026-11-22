@@ -1,31 +1,63 @@
-# 🔒 SecureChat — End-to-End Encrypted Live Messaging Platform
+<div align="center">
 
-[![Live on Vercel](https://img.shields.io/badge/Vercel-Live%20Demo-black?style=for-the-badge&logo=vercel)](https://securechat-vert-seven.vercel.app)
+# 🔒 SecureChat
+
+### Zero-Knowledge, End-to-End Encrypted Real-Time Messaging Platform
+
+[![Live Demo](https://img.shields.io/badge/Vercel-Live%20Demo-black?style=for-the-badge&logo=vercel&logoColor=white)](https://securechat-vert-seven.vercel.app)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
-[![Security](https://img.shields.io/badge/Encryption-AES--256--GCM-green?style=for-the-badge)](https://en.wikipedia.org/wiki/Galois/Counter_Mode)
+[![Encryption](https://img.shields.io/badge/Encryption-AES--256--GCM-green?style=for-the-badge&logo=lock&logoColor=white)](https://en.wikipedia.org/wiki/Galois/Counter_Mode)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 
-> **Live Demo URL:** [https://securechat-vert-seven.vercel.app](https://securechat-vert-seven.vercel.app)
+<br />
 
-A high-performance, zero-knowledge, end-to-end encrypted messaging application crafted with a pixel-perfect Discord-inspired aesthetic and powered by FastAPI and modern Web Cryptography.
+**[🌐 Experience Live Demo](https://securechat-vert-seven.vercel.app)** • **[📖 Architecture](#-system-architecture)** • **[🔐 Cryptographic Guarantee](#-cryptographic-specifications)** • **[🚀 Quick Start](#-local-development-setup)** • **[📡 API Docs](#-api-reference)**
+
+<br />
 
 ---
 
-## 🌟 Highlights
+### 📸 Application Interface Preview
 
-- 🌐 **Live on Vercel**: Deployed with hybrid serverless architecture ensuring 99.99% uptime with zero maintenance.
-- 🔐 **Zero-Knowledge End-to-End Encryption**: AES-256-GCM encryption done exclusively client-side. The server never has access to plaintext messages or encryption keys.
-- ⚡ **Dual Real-Time Engine**: Seamlessly switches between full-duplex WebSockets (for VPS/Docker/Local dev) and HTTP Serverless Live Sync (for Vercel serverless functions).
-- 📱 **Adaptive Mobile UI**: Responsive slide-in navigation drawer, touch-optimized headers, and dynamic viewport handling for mobile and desktop alike.
-- 🔊 **Web Audio Synthesizer**: Pure synthetic Web Audio sound effects for sending and receiving messages (with mute toggle).
-- 📝 **Markdown & Code Formatting**: Formatted code blocks (`JetBrains Mono`), inline code, bold, italics, and safe auto-linking.
-- 📁 **Drag-and-Drop & Clipboard Paste**: Drop any image/document or press `Ctrl+V` to immediately encrypt and transmit screenshots.
-- 🎨 **Multi-Theme Engine**: 3 themes built-in: Discord Dark, Midnight OLED, and Cyber Emerald.
-- 💬 **Interactive Reactions & Replies**: Floating message hover bar with quick reactions (❤️, 👍, 🔥), inline reply preview, and 1-click text copy.
-- 🔑 **Cryptographic Account Recovery**: 32-character hex recovery key generated on signup — zero reliance on email verification or third-party trackers.
-- 🛡️ **Fintech-Grade Defense**: Bcrypt salted password hashing (12 rounds), SlowAPI rate limiting, parameterized queries against SQL injection, strict input sanitization, and CSP headers.
-- 📦 **Data Sovereignty (GDPR Ready)**: 1-click JSON data export and permanent account deletion.
+<p align="center">
+  <img src="docs/screenshots/dashboard.png" alt="SecureChat Real-time Encrypted Interface" width="100%" style="border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);" />
+</p>
+
+<details>
+<summary><b>🔍 View Authentication Screen (Discord-inspired aesthetic)</b></summary>
+<br />
+<p align="center">
+  <img src="docs/screenshots/login.png" alt="SecureChat Auth Modal" width="85%" style="border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);" />
+</p>
+</details>
+
+</div>
+
+---
+
+## 📖 About SecureChat
+
+**SecureChat** is a high-performance, privacy-first messaging platform engineered with a strict **zero-knowledge architecture**. Messages, images, and document payloads are encrypted directly on the client's device using native browser **Web Cryptography (`SubtleCrypto`)** before ever transmitting across the wire. 
+
+Neither database operators, ISPs, nor server hosting providers can inspect plaintext conversations or decipher keys. Powered by **FastAPI** on the backend and wrapped in a pixel-perfect, responsive Discord-inspired interface.
+
+---
+
+## 🌟 Key Features
+
+| Feature | Description |
+|:---|:---|
+| 🔐 **Zero-Knowledge E2EE** | Client-side **AES-256-GCM** encryption with unique 96-bit initialization vectors per message. The server never sees plaintext or keys. |
+| ⚡ **Dual Real-Time Transport** | Seamless hybrid protocol fallback: full-duplex **WebSockets** for dedicated server hosts, and HTTP **Serverless Live Sync** for Vercel Edge deployments. |
+| 🔑 **Cryptographic Recovery** | Deterministic 32-character hex recovery token generated upon account creation — eliminates reliance on third-party email trackers. |
+| 🎨 **Discord-Replica UI** | Familiar multi-channel workspace, member status badges, dark mode palette, and smooth desktop/mobile layout with responsive navigation drawer. |
+| 🔊 **Web Audio Synthesizer** | Pure synthetic Web Audio oscillators generating clean, responsive transmission audio cues with instant mute toggle. |
+| 📝 **Rich Markdown & Code** | Native support for fenced code blocks (`JetBrains Mono`), inline code syntax, bold, italics, and safe auto-linking. |
+| 📁 **Encrypted File Transfer** | Drag-and-drop file upload and `Ctrl+V` clipboard image pasting with instant in-memory client-side encryption. |
+| 💬 **Message Reactions & Replies** | Inline reply context threads, quick emoji reactions (❤️, 👍, 🔥), and 1-click clipboard message copying. |
+| 🛡️ **Fintech-Grade Defense** | Bcrypt salted password hashing (12 rounds), SlowAPI rate-limiting, SQLite parameterized queries, strict regex sanitization, and CSP headers. |
+| 📦 **GDPR Ready & Data Sovereignty** | 1-click JSON account history export and complete, permanent account deletion. |
 
 ---
 
@@ -33,27 +65,27 @@ A high-performance, zero-knowledge, end-to-end encrypted messaging application c
 
 ```mermaid
 flowchart TD
-    subgraph Client ["Client Browser (Zero-Knowledge)"]
-        UI[Discord-Replica UI]
-        Crypto["Web Crypto API (SubtleCrypto)<br/>PBKDF2 100k + AES-256-GCM"]
+    subgraph Client ["Client Browser (Zero-Knowledge Sandbox)"]
+        UI["Discord-Replica Frontend"]
+        Crypto["Web Crypto API (SubtleCrypto)<br/>PBKDF2 100,000 Rounds + AES-256-GCM"]
         Storage["Local Storage (Encrypted State)"]
         UI <--> Crypto
         Crypto <--> Storage
     end
 
-    subgraph Transport ["Dual Real-Time Transport"]
-        WS["WebSocket (/ws/{rid}/{user})<br/>(Local / VPS / Docker)"]
-        HTTP["Serverless Live Sync (/api/rooms/{rid}/messages)<br/>(Vercel Edge & Lambda)"]
+    subgraph Transport ["Dual Real-Time Transport Layer"]
+        WS["WebSocket (/ws/{rid}/{user})<br/>(VPS / Docker / Local Host)"]
+        HTTP["Serverless Live Sync (/api/rooms/{rid}/messages)<br/>(Vercel Edge & Serverless Functions)"]
     end
 
-    subgraph Backend ["FastAPI Backend (Vercel / Uvicorn)"]
-        Router[FastAPI Application Router]
-        Limiter["SlowAPI Rate Limiter"]
-        AuthModule[Bcrypt Auth Engine]
-        DB[(SQLite WAL Database / /tmp/database.db)]
+    subgraph Backend ["FastAPI Core Engine"]
+        Router["FastAPI Application Router"]
+        Limiter["SlowAPI Sliding-Window Limiter"]
+        AuthModule["Bcrypt Authentication Engine"]
+        DB[("SQLite WAL Database / Persistent Storage")]
     end
 
-    Crypto <-->|Encrypted Payloads Only| Transport
+    Crypto <-->|"Encrypted Ciphertext Payloads Only"| Transport
     Transport <--> Router
     Router --> Limiter
     Router --> AuthModule
@@ -65,64 +97,67 @@ flowchart TD
 ## 🔐 Cryptographic Specifications
 
 ### 1. Key Derivation (`PBKDF2`)
-- **Base Key:** Derived from the user-provided room encryption password.
-- **Salt:** Room ID (ensures identical passwords in different rooms generate distinct cryptographic keys).
-- **Iterations:** `100,000` rounds of `SHA-256`.
-- **Output:** 256-bit AES-GCM raw key.
+- **Master Key Source:** Derived directly from the user-provided room encryption passphrase.
+- **Cryptographic Salt:** Normalized Room Identifier (ensures identical passphrases generate distinct cryptographic keys across separate rooms).
+- **Work Factor:** `100,000` iterations of `SHA-256`.
+- **Derived Key:** 256-bit raw key imported into `AES-GCM` format.
 
-### 2. Message Encryption (`AES-GCM-256`)
-- Every message generates a cryptographically secure random 96-bit (12-byte) Initialization Vector (`iv`) using `crypto.getRandomValues()`.
-- Ciphertext and IV are Base64-encoded and transmitted over the wire:
+### 2. Message Encryption & Decryption (`AES-256-GCM`)
+- Each transmitted payload generates a cryptographically secure, pseudo-random 96-bit (12-byte) Initialization Vector (`iv`) using `window.crypto.getRandomValues()`.
+- Galois/Counter Mode (GCM) guarantees both **confidentiality** and **authenticated integrity** against message tampering.
+- Transmitted wire format:
   ```json
   {
-    "id": "msg-uuid-1234",
+    "id": "msg-e41b9ac5-7c22-4a0b-9ffb",
     "room": "general",
-    "sender": "alice",
+    "sender": "sarah_crypto",
     "content": {
-      "iv": "dGVzdElWYmFzZTY0",
-      "data": "ZW5jcnlwdGVkQ2lwaGVydGV4dA=="
+      "iv": "dGVzdElWYmFzZTY0MTI=",
+      "data": "ZW5jcnlwdGVkQ2lwaGVydGV4dERhdGE=="
     },
     "type": "message",
-    "timestamp": "2026-11-22T17:50:00.000Z"
+    "timestamp": "2026-11-23T00:15:00.000Z"
   }
   ```
-- Decryption occurs **strictly in the recipient's browser**. An attacker intercepting network packets or reading the database can only see ciphertext.
+- **Decryption:** Happens strictly inside recipient client memory. Middleboxes, network proxies, and server administrators only observe random-looking high-entropy ciphertext.
 
 ---
 
 ## 🚀 Live Demo & Deployment
 
-### Visit Live
-The application is live and accessible at:
+### 🌐 Access Live
+The platform is actively deployed and globally accessible at:  
 👉 **[https://securechat-vert-seven.vercel.app](https://securechat-vert-seven.vercel.app)**
 
-### Deploy Your Own to Vercel (1-Click)
+### ⚡ Deploy Your Own Instance (Vercel)
+
 ```bash
-# Clone the repository
+# 1. Clone the repository
 git clone https://github.com/Coderaryanyadav/SecureChat.git
 cd SecureChat
 
-# Deploy to Vercel
+# 2. Deploy via Vercel CLI
 npx vercel deploy --prod
 ```
 
-`vercel.json` is preconfigured to route all services to FastAPI while optimizing static assets for global Edge CDN delivery.
+> **Note:** The included [`vercel.json`](vercel.json) routes incoming requests seamlessly between FastAPI endpoints and global Edge CDN delivery.
 
 ---
 
 ## 💻 Local Development Setup
 
 ### Prerequisites
-- Python 3.10+
-- Modern Web Browser (Chrome, Firefox, Safari, Edge)
+- **Python 3.10+**
+- **Modern Web Browser** with Web Cryptography API support (Chrome, Brave, Firefox, Safari, Edge)
 
 ### Quick Start
+
 ```bash
 # 1. Clone repository
 git clone https://github.com/Coderaryanyadav/SecureChat.git
 cd SecureChat
 
-# 2. Create virtual environment
+# 2. Set up virtual environment
 python3 -m venv .venv
 source .venv/bin/activate
 
@@ -133,23 +168,27 @@ pip install -r requirements.txt
 ./start.sh
 ```
 
-Or run manually with uvicorn:
+Or run directly with `uvicorn`:
+
 ```bash
 export DEV_MODE=1
 python3 server/main.py
 ```
+
 Open **[http://localhost:8000](http://localhost:8000)** in your browser.
 
 ---
 
-## 🧪 Testing
+## 🧪 Automated Testing
 
-The repository includes automated test suites covering input sanitization, authentication, and room messaging:
+The repository includes a comprehensive test suite testing endpoint validation, sanitization guards, and authentication:
 
 ```bash
-# Run pytest with virtual environment activated
+# Ensure virtual environment is active
 source .venv/bin/activate
-PYTHONPATH=. pytest
+
+# Run test suite
+PYTHONPATH=. pytest -v
 ```
 
 ---
@@ -157,39 +196,55 @@ PYTHONPATH=. pytest
 ## 📡 API Reference
 
 | Endpoint | Method | Rate Limit | Description |
-|---|---|---|---|
-| `/health` | `GET`, `HEAD` | None | Service health & version status |
-| `/api/register` | `POST` | 15 / hour | Register user; returns 32-character recovery key |
-| `/api/login` | `POST` | 30 / min | Authenticate user; sets secure session cookie |
-| `/api/logout` | `POST` | None | Terminate session and invalidate cookie |
-| `/api/recover` | `POST` | None | Reset password using secret recovery key |
-| `/api/save-room` | `POST` | 60 / min | Save room to user's persistent channel history |
-| `/api/history/{uid}` | `GET` | None | Fetch user's joined room list |
-| `/api/rooms/{rid}/messages` | `GET` | None | Poll room messages & active participants |
-| `/api/rooms/{rid}/messages` | `POST` | 120 / min | Transmit encrypted message or file |
-| `/api/ws-token` | `GET` | None | Generate 60s handshake token for WebSocket connection |
-| `/api/export` | `GET` | None | Export user account metadata and room history |
-| `/api/delete-account` | `POST` | None | Permanently delete account and user history |
-| `/ws/{rid}/{user}` | `WebSocket` | 30 msg / 10s | Stateful bidirectional WebSocket connection |
+|:---|:---:|:---:|:---|
+| `/health` | `GET`, `HEAD` | None | Service heartbeat & operational health |
+| `/api/register` | `POST` | 15 / hour | Register new account; returns 32-character recovery key |
+| `/api/login` | `POST` | 30 / min | Authenticate user credentials; sets secure session cookie |
+| `/api/logout` | `POST` | None | Clear session authentication state |
+| `/api/recover` | `POST` | None | Reset user account password via recovery hex key |
+| `/api/save-room` | `POST` | 60 / min | Add room reference to persistent channel list |
+| `/api/history/{uid}` | `GET` | None | Fetch channel list for authenticated user |
+| `/api/rooms/{rid}/messages` | `GET` | None | Retrieve room messages & active member roster |
+| `/api/rooms/{rid}/messages` | `POST` | 120 / min | Transmit encrypted message or media payload |
+| `/api/ws-token` | `GET` | None | Issue short-lived (60s) handshake ticket for WebSockets |
+| `/api/export` | `GET` | None | Export user account metadata and room logs (GDPR) |
+| `/api/delete-account` | `POST` | None | Irreversibly delete account and database records |
+| `/ws/{rid}/{user}` | `WebSocket` | 30 msg / 10s | Bidirectional real-time WebSocket channel |
 
 ---
 
-## 🛡️ Security Hardening Details
+## 🛡️ Security Hardening & Threat Model
 
+- **Zero Plaintext Storage:** Plaintext chat content never touches server RAM or persistent database tables.
 - **Strict Input Sanitization:**
-  - Usernames and Room IDs are validated against strict regex (`^[a-z0-9_-]+$`), trimmed, and normalized to lowercase to prevent case-variation impersonation attacks.
-  - Usernames: minimum 3, maximum 50 characters.
-  - Passwords: minimum 8, maximum 128 characters.
-- **SQL Injection Prevention:**
-  - 100% of database interactions utilize parameterized SQLite statements (`?` placeholders). No string interpolation or raw SQL formatting.
-- **XSS & Content Security Policy:**
-  - Client-side DOM manipulation strictly uses text nodes and `sanitizeHTML` encoding before rendering.
-  - Server enforces headers: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `X-XSS-Protection: 1; mode=block`.
-- **Brute-Force & Denial-of-Service Defense:**
-  - Integrated `SlowAPI` with in-memory / IP-based sliding window rate limiters across critical registration and messaging routes.
+  - Room names and usernames are constrained against `^[a-z0-9_-]+$`, case-normalized, and length-bounded (3–50 chars).
+  - Passwords strictly enforced between 8 and 128 characters.
+- **SQL Injection Defense:**
+  - 100% of SQLite database queries use parameterized SQL bindings (`?` placeholders). Zero raw string interpolation.
+- **XSS & Content Security Policy (CSP):**
+  - Text rendered into the DOM utilizes strict text nodes and HTML character entity escaping.
+  - HTTP response headers enforce: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `X-XSS-Protection: 1; mode=block`.
+- **Denial-of-Service Defense:**
+  - Rate limiting via `SlowAPI` on critical authentication and message submission routes protects against brute-force attacks.
+
+---
+
+## 🤝 Contributing
+
+Contributions, feature suggestions, and security audits are warmly welcome!
+
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'feat: Add AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ---
 
 ## 📄 License
 
 This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+
+<div align="center">
+  <sub>Built with ❤️ by <a href="https://github.com/Coderaryanyadav">Coderaryanyadav</a></sub>
+</div>
