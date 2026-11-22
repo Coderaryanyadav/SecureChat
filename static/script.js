@@ -1,17 +1,43 @@
 /**
- * SecureChat v3.5 - The Definitive End-to-End Encrypted Platform
- * Featuring Dual Real-Time Engine (WebSockets + Serverless Sync)
+ * SecureChat v4.0 - High-Fidelity Zero-Knowledge Platform
+ * Features: Dual Real-Time Engine, Web Crypto AES-256-GCM, Web Audio Synthesizer,
+ * Markdown & Code Formatting, Drag & Drop, Clipboard Paste, Floating Actions, Themes & Mobile Drawer.
  */
 document.addEventListener('DOMContentLoaded', () => {
     const $ = id => document.getElementById(id);
     const $$ = selector => document.querySelectorAll(selector);
 
-    // --- SECURITY & UTILS ---
+    // --- SECURITY & MARKDOWN FORMATTER ---
     const sanitizeHTML = (str) => {
         if (!str) return '';
         const div = document.createElement('div');
         div.textContent = String(str);
         return div.innerHTML;
+    };
+
+    const formatMarkdown = (text) => {
+        if (!text) return '';
+        let escaped = sanitizeHTML(text);
+
+        // Code blocks: ```code```
+        escaped = escaped.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+
+        // Inline code: `code`
+        escaped = escaped.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+        // Bold: **text**
+        escaped = escaped.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+        // Italic: *text*
+        escaped = escaped.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+
+        // Clickable Links: https://... or http://...
+        escaped = escaped.replace(
+            /(https?:\/\/[^\s<]+)/g,
+            '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
+        );
+
+        return escaped;
     };
 
     // --- TOAST NOTIFICATIONS ---
@@ -28,7 +54,51 @@ document.addEventListener('DOMContentLoaded', () => {
             toast.style.transform = 'translateY(-10px)';
             toast.style.transition = 'all 0.3s ease';
             setTimeout(() => toast.remove(), 300);
-        }, 3500);
+        }, 3200);
+    };
+
+    // --- WEB AUDIO SYNTHESIZER ---
+    let audioCtx = null;
+    const initAudio = () => {
+        if (!audioCtx) {
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (AudioContextClass) audioCtx = new AudioContextClass();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+    };
+
+    const playSound = (type = 'send') => {
+        if (localStorage.getItem('sc_sound_muted') === 'true') return;
+        try {
+            initAudio();
+            if (!audioCtx) return;
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+            if (type === 'send') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(440, now);
+                osc.frequency.exponentialRampToValueAtTime(880, now + 0.1);
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            } else if (type === 'receive') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, now); // C5
+                osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+                osc.start(now);
+                osc.stop(now + 0.22);
+            }
+        } catch (e) {}
     };
 
     // --- STATE ENGINE ---
@@ -43,13 +113,24 @@ document.addEventListener('DOMContentLoaded', () => {
         activeMembers: [],
         memberListVisible: true,
         replyingTo: null,
-        connMode: 'sync' // 'ws' or 'sync'
+        connMode: 'sync',
+        theme: localStorage.getItem('sc_theme') || 'dark',
+        reactions: JSON.parse(localStorage.getItem('sc_reactions') || '{}') // msgId -> { emoji: count }
     };
+
+    // Apply saved theme
+    if (state.theme && state.theme !== 'dark') {
+        document.documentElement.setAttribute('data-theme', state.theme);
+    }
 
     // --- ELEMENTS ---
     const elements = {
         loginScreen: $('login-screen'),
         appShell: $('chat-screen'),
+        appSidebar: $('app-sidebar'),
+        sidebarBackdrop: $('sidebar-backdrop'),
+        mobileBackToChannels: $('mobile-back-to-channels'),
+        mobileToggleEmpty: $('mobile-toggle-btn-empty'),
         authError: $('auth-error'),
         authTitle: $('auth-title'),
         authSubtitle: $('auth-subtitle'),
@@ -71,6 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
         sendMsgBtn: $('send-msg-btn'),
         chatName: $('chat-name'),
         connBadge: $('conn-mode-badge'),
+        copyRoomPill: $('copy-room-pill'),
         userTag: $('current-user-tag'),
         globalAvatar: $('global-user-avatar'),
         systemOverlay: $('system-overlay'),
@@ -94,11 +176,15 @@ document.addEventListener('DOMContentLoaded', () => {
         settingsUsername: $('settings-username-display'),
         settingsAvatar: $('settings-avatar-display'),
         settingsBtn: $('settings-btn'),
+        soundToggleBtn: $('sound-toggle-btn'),
         logoutBtn: $('logout-btn'),
         deleteAccountBtn: $('delete-account-btn'),
         exportDataBtn: $('export-data-btn'),
         attachBtn: $('attach-btn'),
         fileInput: $('file-input'),
+        dropzoneOverlay: $('dropzone-overlay'),
+        emojiPickerBtn: $('emoji-picker-btn'),
+        emojiPopover: $('emoji-popover'),
 
         roomIdInput: $('room-id-input'),
         roomPasswordInput: $('room-password-input'),
@@ -108,6 +194,24 @@ document.addEventListener('DOMContentLoaded', () => {
         sidebarNewChatBtn: $('sidebar-new-chat-btn'),
         emptyStateNewChatBtn: $('new-chat-btn-empty')
     };
+
+    // Update sound toggle button label
+    const updateSoundBtn = () => {
+        if (!elements.soundToggleBtn) return;
+        const isMuted = localStorage.getItem('sc_sound_muted') === 'true';
+        elements.soundToggleBtn.textContent = isMuted ? '🔇' : '🔊';
+        elements.soundToggleBtn.title = isMuted ? 'Sound Muted (Click to Unmute)' : 'Sound Active (Click to Mute)';
+    };
+    updateSoundBtn();
+
+    if (elements.soundToggleBtn) {
+        elements.soundToggleBtn.addEventListener('click', () => {
+            const isMuted = localStorage.getItem('sc_sound_muted') === 'true';
+            localStorage.setItem('sc_sound_muted', String(!isMuted));
+            updateSoundBtn();
+            if (isMuted) playSound('send');
+        });
+    }
 
     // --- MODAL CONTROLLER ---
     const showModal = (id) => {
@@ -120,6 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const hideModal = () => {
         elements.systemOverlay.classList.add('hidden');
         $$('.system-modal, .settings-view').forEach(m => m.classList.add('hidden'));
+        if (elements.emojiPopover) elements.emojiPopover.classList.add('hidden');
     };
 
     $$('.close-modal').forEach(b => b.addEventListener('click', hideModal));
@@ -127,9 +232,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') hideModal();
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            if (elements.channelSearch) elements.channelSearch.focus();
+        }
     });
 
-    // --- CRYPTO ENGINE (Web Cryptography API: AES-GCM 256 + PBKDF2) ---
+    // --- MOBILE DRAWER HANDLERS ---
+    const openSidebarDrawer = () => {
+        if (elements.appSidebar) elements.appSidebar.classList.add('drawer-open');
+        if (elements.sidebarBackdrop) elements.sidebarBackdrop.classList.remove('hidden');
+    };
+
+    const closeSidebarDrawer = () => {
+        if (elements.appSidebar) elements.appSidebar.classList.remove('drawer-open');
+        if (elements.sidebarBackdrop) elements.sidebarBackdrop.classList.add('hidden');
+    };
+
+    if (elements.mobileBackToChannels) elements.mobileBackToChannels.addEventListener('click', openSidebarDrawer);
+    if (elements.mobileToggleEmpty) elements.mobileToggleEmpty.addEventListener('click', openSidebarDrawer);
+    if (elements.sidebarBackdrop) elements.sidebarBackdrop.addEventListener('click', closeSidebarDrawer);
+
+    // --- THEME SELECTOR ---
+    $$('.theme-choice-btn').forEach(btn => {
+        const themeName = btn.getAttribute('data-theme');
+        if (themeName === state.theme) btn.classList.add('active');
+        btn.addEventListener('click', () => {
+            $$('.theme-choice-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            state.theme = themeName;
+            localStorage.setItem('sc_theme', themeName);
+            if (themeName === 'dark') {
+                document.documentElement.removeAttribute('data-theme');
+            } else {
+                document.documentElement.setAttribute('data-theme', themeName);
+            }
+            showToast(`Theme updated to ${btn.textContent}`, "info");
+        });
+    });
+
+    // --- CRYPTO ENGINE (PBKDF2 + AES-GCM 256) ---
     const deriveKey = async (password, salt) => {
         const encoder = new TextEncoder();
         const baseKey = await crypto.subtle.importKey(
@@ -154,22 +296,17 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const encryptMessage = async (text, password, roomId) => {
-        try {
-            const key = await deriveKey(password, roomId);
-            const iv = crypto.getRandomValues(new Uint8Array(12));
-            const ciphertext = await crypto.subtle.encrypt(
-                { name: "AES-GCM", iv },
-                key,
-                new TextEncoder().encode(text)
-            );
-            return {
-                iv: btoa(String.fromCharCode(...iv)),
-                data: btoa(String.fromCharCode(...new Uint8Array(ciphertext)))
-            };
-        } catch (e) {
-            console.error("Encryption error:", e);
-            throw e;
-        }
+        const key = await deriveKey(password, roomId);
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const ciphertext = await crypto.subtle.encrypt(
+            { name: "AES-GCM", iv },
+            key,
+            new TextEncoder().encode(text)
+        );
+        return {
+            iv: btoa(String.fromCharCode(...iv)),
+            data: btoa(String.fromCharCode(...new Uint8Array(ciphertext)))
+        };
     };
 
     const decryptMessage = async (enc, password, roomId) => {
@@ -183,7 +320,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const dec = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, data);
             return new TextDecoder().decode(dec);
         } catch (e) {
-            return "[Decryption Failed - Check Room Password]";
+            return "[Decryption Error: Key Mismatch]";
         }
     };
 
@@ -198,10 +335,27 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- UI RENDERING ---
+    const renderWelcomeBanner = (rid) => {
+        if (!elements.msgContainer) return;
+        const banner = document.createElement('div');
+        banner.className = 'channel-welcome-banner';
+        banner.id = 'welcome-banner';
+        banner.innerHTML = `
+            <div class="channel-welcome-icon">#</div>
+            <h2>Welcome to #${sanitizeHTML(rid)}!</h2>
+            <p>This is the start of the <strong>#${sanitizeHTML(rid)}</strong> channel. All messages, images, and files transmitted here are client-side encrypted using <strong>AES-256-GCM</strong> with 100,000 rounds of PBKDF2. Only peers holding your room encryption password can read transmissions.</p>
+        `;
+        elements.msgContainer.appendChild(banner);
+    };
+
     const renderMessage = (msg) => {
         if (!elements.msgContainer) return;
         const existing = $(`msg-${msg.id}`);
-        if (existing) return; // Prevent duplicate render
+        if (existing) return;
+
+        // Remove welcome banner if present and message is first
+        const banner = $('welcome-banner');
+        if (banner) banner.remove();
 
         const m = document.createElement('div');
         m.className = 'message';
@@ -214,16 +368,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const timeStr = timeObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
         let contentHTML = '';
-        if (msg.type === 'image' && msg.content && msg.content.startsWith('data:image')) {
-            contentHTML = `<img src="${msg.content}" style="max-width:320px; max-height:240px; border-radius:6px; margin-top:4px;" alt="Encrypted Attachment">`;
+        if (msg.type === 'image' && msg.content && String(msg.content).startsWith('data:image')) {
+            contentHTML = `<img src="${msg.content}" style="max-width:340px; max-height:260px; border-radius:8px; margin-top:6px; box-shadow:0 4px 12px rgba(0,0,0,0.3);" alt="Encrypted Attachment">`;
         } else {
-            contentHTML = `<div class="msg-content">${sanitizeHTML(msg.content)}</div>`;
+            contentHTML = `<div class="msg-content">${formatMarkdown(msg.content)}</div>`;
         }
 
         let replyHTML = '';
         if (msg.reply_to) {
             replyHTML = `
-                <div class="reply-badge" style="font-size:11px; color:var(--text-muted); margin-bottom:4px; display:flex; align-items:center; gap:4px;">
+                <div class="reply-badge" style="font-size:11px; color:var(--text-muted); margin-bottom:4px; display:flex; align-items:center; gap:6px;">
                     <span>↩️ Replying to <strong>${sanitizeHTML(msg.reply_to.sender || 'someone')}</strong>:</span>
                     <span style="font-style:italic;">${sanitizeHTML(msg.reply_to.text || '')}</span>
                 </div>
@@ -232,30 +386,77 @@ document.addEventListener('DOMContentLoaded', () => {
 
         m.innerHTML = `
             <div class="msg-avatar" style="background-color: ${avatarColor}">${sender[0].toUpperCase()}</div>
-            <div class="msg-body" style="flex:1;">
+            <div class="msg-body">
                 ${replyHTML}
                 <div class="msg-header">
                     <span class="msg-author" style="${isSelf ? 'color:var(--discord-blurple); font-weight:700;' : ''}">${sanitizeHTML(sender)}</span>
                     <span class="msg-time">${timeStr}</span>
                 </div>
                 ${contentHTML}
+                <div class="reactions-tray" id="reactions-${msg.id}"></div>
+            </div>
+            <div class="msg-actions">
+                <button class="action-icon-btn react-quick-btn" data-emoji="❤️" title="React with Heart">❤️</button>
+                <button class="action-icon-btn react-quick-btn" data-emoji="👍" title="React with Thumbs Up">👍</button>
+                <button class="action-icon-btn react-quick-btn" data-emoji="🔥" title="React with Fire">🔥</button>
+                <button class="action-icon-btn reply-btn" title="Reply to message">↩️</button>
+                <button class="action-icon-btn copy-btn" title="Copy text">📋</button>
             </div>
         `;
 
-        // Context menu / click to reply
-        m.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            setupReply(sender, msg.content);
+        // Action Buttons Listeners
+        const replyBtn = m.querySelector('.reply-btn');
+        if (replyBtn) {
+            replyBtn.addEventListener('click', () => setupReply(sender, msg.content));
+        }
+
+        const copyBtn = m.querySelector('.copy-btn');
+        if (copyBtn) {
+            copyBtn.addEventListener('click', async () => {
+                try {
+                    await navigator.clipboard.writeText(msg.content);
+                    showToast("Message copied to clipboard", "info");
+                } catch (e) {}
+            });
+        }
+
+        m.querySelectorAll('.react-quick-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const emoji = btn.getAttribute('data-emoji');
+                addReaction(msg.id, emoji);
+            });
         });
 
         elements.msgContainer.appendChild(m);
         elements.msgContainer.scrollTop = elements.msgContainer.scrollHeight;
     };
 
+    const addReaction = (msgId, emoji) => {
+        if (!state.reactions[msgId]) state.reactions[msgId] = {};
+        state.reactions[msgId][emoji] = (state.reactions[msgId][emoji] || 0) + 1;
+        try {
+            localStorage.setItem('sc_reactions', JSON.stringify(state.reactions));
+        } catch (e) {}
+        renderReactions(msgId);
+    };
+
+    const renderReactions = (msgId) => {
+        const tray = $(`reactions-${msgId}`);
+        if (!tray || !state.reactions[msgId]) return;
+        tray.innerHTML = '';
+        Object.entries(state.reactions[msgId]).forEach(([emoji, count]) => {
+            const pill = document.createElement('span');
+            pill.className = 'reaction-pill';
+            pill.innerHTML = `<span>${emoji}</span> <span>${count}</span>`;
+            pill.addEventListener('click', () => addReaction(msgId, emoji));
+            tray.appendChild(pill);
+        });
+    };
+
     const setupReply = (sender, text) => {
-        state.replyingTo = { sender, text: text.substring(0, 60) };
+        state.replyingTo = { sender, text: String(text).substring(0, 60) };
         elements.replyToUser.textContent = sender;
-        elements.replyPreviewText.textContent = text.substring(0, 60);
+        elements.replyPreviewText.textContent = String(text).substring(0, 60);
         elements.replyOverlay.classList.remove('hidden');
         elements.messageInput.focus();
     };
@@ -272,7 +473,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.chatList.innerHTML = '';
         const roomIds = Object.keys(state.rooms);
         if (roomIds.length === 0) {
-            elements.chatList.innerHTML = `<div style="padding:12px; font-size:12px; color:var(--text-muted);">No rooms yet. Click + to join one!</div>`;
+            elements.chatList.innerHTML = `<div style="padding:16px 12px; font-size:13px; color:var(--text-muted); text-align:center;">No channels yet.<br>Click <strong>+</strong> to start!</div>`;
             return;
         }
 
@@ -282,8 +483,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (filter && !rid.toLowerCase().includes(filter)) return;
             const item = document.createElement('div');
             item.className = `chat-item ${state.activeRoom === rid ? 'active' : ''}`;
-            item.innerHTML = `<span class="hash">#</span><span class="channel-name">${sanitizeHTML(rid)}</span>`;
-            item.addEventListener('click', () => switchRoom(rid));
+            item.innerHTML = `<span class="hash">#</span><span class="channel-name" style="flex:1; overflow:hidden; text-overflow:ellipsis;">${sanitizeHTML(rid)}</span>`;
+            item.addEventListener('click', () => {
+                switchRoom(rid);
+                closeSidebarDrawer();
+            });
             elements.chatList.appendChild(item);
         });
     };
@@ -311,7 +515,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // --- REALTIME ENGINE: DUAL MODE (WEBSOCKET + SERVERLESS SYNC) ---
+    // --- REALTIME ENGINE ---
     const stopRealtime = () => {
         if (state.pollTimer) {
             clearInterval(state.pollTimer);
@@ -328,10 +532,8 @@ document.addEventListener('DOMContentLoaded', () => {
         state.lastMessageTime = null;
 
         // Mode 1: Attempt WebSocket connection
-        let wsSupported = false;
         try {
             const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-            // First fetch handshake token
             fetch(`/api/ws-token?user=${encodeURIComponent(state.currentUser)}`)
                 .then(r => r.ok ? r.json() : null)
                 .then(tokenData => {
@@ -352,24 +554,16 @@ document.addEventListener('DOMContentLoaded', () => {
                             try {
                                 const data = JSON.parse(e.data);
                                 if (data.type === 'message' || data.type === 'image' || data.type === 'file') {
-                                    await handleIncomingMessage(rid, data);
+                                    await handleIncomingMessage(rid, data, true);
                                 } else if (data.type === 'user_list') {
                                     updateMemberList(data.users || []);
                                 }
-                            } catch (err) {
-                                console.error("WS parse error:", err);
-                            }
+                            } catch (err) {}
                         };
 
-                        socket.onerror = () => {
-                            // Fall back to serverless sync
-                            startServerlessPolling(rid);
-                        };
-
+                        socket.onerror = () => startServerlessPolling(rid);
                         socket.onclose = () => {
-                            if (state.activeRoom === rid) {
-                                startServerlessPolling(rid);
-                            }
+                            if (state.activeRoom === rid) startServerlessPolling(rid);
                         };
                     } else {
                         startServerlessPolling(rid);
@@ -380,7 +574,7 @@ document.addEventListener('DOMContentLoaded', () => {
             startServerlessPolling(rid);
         }
 
-        // Always run immediate HTTP fetch to hydrate room history
+        // Run immediate fetch
         fetchRoomMessages(rid);
     };
 
@@ -391,7 +585,6 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.connBadge.textContent = 'LIVE SYNC';
             elements.connBadge.className = 'network-badge poll';
         }
-        // Poll every 1.5 seconds for fresh messages and active members
         state.pollTimer = setInterval(() => {
             if (state.activeRoom === rid) {
                 fetchRoomMessages(rid);
@@ -409,19 +602,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.members) updateMemberList(data.members);
                 if (data.messages && data.messages.length > 0) {
                     for (const m of data.messages) {
-                        await handleIncomingMessage(rid, m);
+                        await handleIncomingMessage(rid, m, false);
                     }
                 }
             }
-        } catch (e) {
-            // Offline or network error
-        }
+        } catch (e) {}
     };
 
-    const handleIncomingMessage = async (rid, rawMsg) => {
+    const handleIncomingMessage = async (rid, rawMsg, isLive = false) => {
         if (!state.rooms[rid]) return;
         
-        // Decrypt if encrypted object
         let textContent = rawMsg.content;
         if (rawMsg.content && typeof rawMsg.content === 'object' && rawMsg.content.iv) {
             textContent = await decryptMessage(rawMsg.content, state.rooms[rid].password, rid);
@@ -436,20 +626,20 @@ document.addEventListener('DOMContentLoaded', () => {
             reply_to: rawMsg.reply_to || null
         };
 
-        // Update latest message timestamp
-        if (rawMsg.timestamp) {
-            if (!state.lastMessageTime || rawMsg.timestamp > state.lastMessageTime) {
-                state.lastMessageTime = rawMsg.timestamp;
-            }
+        if (rawMsg.timestamp && (!state.lastMessageTime || rawMsg.timestamp > state.lastMessageTime)) {
+            state.lastMessageTime = rawMsg.timestamp;
         }
 
-        // Avoid duplicate in room state
         const exists = state.rooms[rid].messages.some(m => m.id === msgObj.id);
         if (!exists) {
             state.rooms[rid].messages.push(msgObj);
             try {
                 localStorage.setItem('sc_rooms', JSON.stringify(state.rooms));
             } catch (e) {}
+            // Play chime sound on message from another user
+            if (msgObj.sender !== state.currentUser) {
+                playSound('receive');
+            }
         }
 
         if (state.activeRoom === rid) {
@@ -466,14 +656,29 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.messageInput.placeholder = `Message #${rid}`;
         elements.msgContainer.innerHTML = '';
 
-        // Render cached messages
-        if (state.rooms[rid] && state.rooms[rid].messages) {
+        if (state.rooms[rid] && state.rooms[rid].messages && state.rooms[rid].messages.length > 0) {
             state.rooms[rid].messages.forEach(renderMessage);
+        } else {
+            renderWelcomeBanner(rid);
         }
 
         updateSidebar();
         startRealtime(rid);
+        elements.messageInput.focus();
     };
+
+    // --- COPY ROOM ID ---
+    if (elements.copyRoomPill) {
+        elements.copyRoomPill.addEventListener('click', async () => {
+            if (!state.activeRoom) return;
+            try {
+                await navigator.clipboard.writeText(state.activeRoom);
+                showToast(`Copied room name "#${state.activeRoom}" to clipboard!`, "success");
+            } catch (e) {
+                showToast(`Room: ${state.activeRoom}`, "info");
+            }
+        });
+    }
 
     // --- SEND MESSAGE ---
     const sendMessage = async () => {
@@ -488,13 +693,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const reply = state.replyingTo;
 
         elements.messageInput.value = '';
+        elements.messageInput.style.height = 'auto';
         state.replyingTo = null;
         if (elements.replyOverlay) elements.replyOverlay.classList.add('hidden');
+
+        playSound('send');
 
         try {
             const encrypted = await encryptMessage(text, pwd, rid);
             
-            // Render locally immediately
             const localMsg = {
                 id: msgId,
                 sender: sender,
@@ -506,7 +713,6 @@ document.addEventListener('DOMContentLoaded', () => {
             state.rooms[rid].messages.push(localMsg);
             renderMessage(localMsg);
 
-            // Send via HTTP Sync
             fetch(`/api/rooms/${encodeURIComponent(rid)}/messages`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -518,9 +724,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     timestamp: ts,
                     reply_to: reply
                 })
-            }).catch(e => console.error("HTTP send error:", e));
+            }).catch(() => {});
 
-            // Also broadcast over WebSocket if open
             if (state.ws && state.ws.readyState === WebSocket.OPEN) {
                 state.ws.send(JSON.stringify({
                     id: msgId,
@@ -537,6 +742,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // Auto-grow textarea
+    elements.messageInput.addEventListener('input', () => {
+        elements.messageInput.style.height = 'auto';
+        elements.messageInput.style.height = Math.min(elements.messageInput.scrollHeight, 160) + 'px';
+    });
+
     elements.messageInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
@@ -548,64 +759,132 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.sendMsgBtn.addEventListener('click', sendMessage);
     }
 
-    // --- ATTACHMENTS (Images / Files) ---
-    if (elements.attachBtn && elements.fileInput) {
-        elements.attachBtn.addEventListener('click', () => elements.fileInput.click());
-        elements.fileInput.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file || !state.activeRoom) return;
+    // --- EMOJI POPOVER ---
+    if (elements.emojiPickerBtn && elements.emojiPopover) {
+        elements.emojiPickerBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            elements.emojiPopover.classList.toggle('hidden');
+        });
 
-            if (file.size > 2 * 1024 * 1024) {
-                showToast("File exceeds 2MB limit for encrypted transit", "error");
-                return;
+        elements.emojiPopover.querySelectorAll('.emoji-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                elements.messageInput.value += btn.textContent;
+                elements.messageInput.focus();
+                elements.emojiPopover.classList.add('hidden');
+            });
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!elements.emojiPopover.contains(e.target) && e.target !== elements.emojiPickerBtn) {
+                elements.emojiPopover.classList.add('hidden');
             }
+        });
+    }
 
-            const reader = new FileReader();
-            reader.onload = async () => {
-                const base64Data = reader.result;
-                const rid = state.activeRoom;
-                const pwd = state.rooms[rid].password;
-                const msgId = `file-${Date.now()}`;
-                const ts = new Date().toISOString();
+    // --- FILE & ATTACHMENT HANDLING ---
+    const transmitFile = (file) => {
+        if (!file || !state.activeRoom) return;
 
-                try {
-                    const encrypted = await encryptMessage(base64Data, pwd, rid);
-                    const localMsg = {
+        if (file.size > 2.5 * 1024 * 1024) {
+            showToast("File exceeds 2.5MB limit for encrypted transit", "error");
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = async () => {
+            const base64Data = reader.result;
+            const rid = state.activeRoom;
+            const pwd = state.rooms[rid].password;
+            const msgId = `file-${Date.now()}`;
+            const ts = new Date().toISOString();
+            const isImage = file.type.startsWith('image/');
+
+            playSound('send');
+
+            try {
+                const encrypted = await encryptMessage(base64Data, pwd, rid);
+                const localMsg = {
+                    id: msgId,
+                    sender: state.currentUser,
+                    content: base64Data,
+                    type: isImage ? 'image' : 'file',
+                    timestamp: new Date(ts)
+                };
+                state.rooms[rid].messages.push(localMsg);
+                renderMessage(localMsg);
+
+                await fetch(`/api/rooms/${encodeURIComponent(rid)}/messages`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
                         id: msgId,
                         sender: state.currentUser,
-                        content: base64Data,
-                        type: 'image',
-                        timestamp: new Date(ts)
-                    };
-                    state.rooms[rid].messages.push(localMsg);
-                    renderMessage(localMsg);
+                        content: encrypted,
+                        type: isImage ? 'image' : 'file',
+                        timestamp: ts
+                    })
+                });
+                showToast(`Encrypted ${file.name} sent!`, "success");
+            } catch (err) {
+                showToast("Failed to encrypt attachment", "error");
+            }
+        };
+        reader.readAsDataURL(file);
+    };
 
-                    await fetch(`/api/rooms/${encodeURIComponent(rid)}/messages`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            id: msgId,
-                            sender: state.currentUser,
-                            content: encrypted,
-                            type: 'image',
-                            timestamp: ts
-                        })
-                    });
-                    showToast("Encrypted image transmitted", "success");
-                } catch (err) {
-                    showToast("Failed to encrypt attachment", "error");
-                }
-            };
-            reader.readAsDataURL(file);
+    if (elements.attachBtn && elements.fileInput) {
+        elements.attachBtn.addEventListener('click', () => elements.fileInput.click());
+        elements.fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) transmitFile(file);
             elements.fileInput.value = '';
         });
     }
 
+    // --- DRAG & DROP SUPPORT ---
+    const appCanvas = $('app-canvas');
+    if (appCanvas && elements.dropzoneOverlay) {
+        ['dragenter', 'dragover'].forEach(eventName => {
+            appCanvas.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (state.activeRoom) elements.dropzoneOverlay.classList.remove('hidden');
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            elements.dropzoneOverlay.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                elements.dropzoneOverlay.classList.add('hidden');
+                if (eventName === 'drop' && e.dataTransfer && e.dataTransfer.files.length > 0) {
+                    transmitFile(e.dataTransfer.files[0]);
+                }
+            });
+        });
+    }
+
+    // --- CLIPBOARD PASTE IMAGE SUPPORT ---
+    document.addEventListener('paste', (e) => {
+        if (!state.activeRoom) return;
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        for (const item of items) {
+            if (item.type.indexOf('image') !== -1) {
+                const file = item.getAsFile();
+                if (file) {
+                    e.preventDefault();
+                    transmitFile(file);
+                    showToast("Pasted screenshot attached and encrypting...", "info");
+                }
+            }
+        }
+    });
+
     // --- ROOM CREATION & JOINING ---
     if (elements.generateRoomId) {
         elements.generateRoomId.addEventListener('click', () => {
-            const adjectives = ['shadow', 'crypto', 'silent', 'phantom', 'cosmic', 'nebula', 'quantum', 'aurora'];
-            const nouns = ['citadel', 'sanctum', 'matrix', 'dimension', 'portal', 'hub', 'vault', 'haven'];
+            const adjectives = ['shadow', 'crypto', 'silent', 'phantom', 'cosmic', 'nebula', 'quantum', 'aurora', 'hyper', 'nexus'];
+            const nouns = ['citadel', 'sanctum', 'matrix', 'dimension', 'portal', 'hub', 'vault', 'haven', 'station', 'node'];
             const num = Math.floor(10 + Math.random() * 90);
             const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
             const noun = nouns[Math.floor(Math.random() * nouns.length)];
@@ -647,7 +926,6 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('sc_rooms', JSON.stringify(state.rooms));
         } catch (e) {}
 
-        // Persist room to account history on server
         if (state.userId) {
             fetch('/api/save-room', {
                 method: 'POST',
@@ -658,6 +936,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         hideModal();
         switchRoom(rid);
+        closeSidebarDrawer();
         showToast(`Connected to #${rid}`, "success");
     });
 
@@ -676,7 +955,6 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.settingsAvatar.style.backgroundColor = stringToColor(state.currentUser);
         }
 
-        // Load room history from server
         if (state.userId) {
             try {
                 const res = await fetch(`/api/history/${state.userId}`);
@@ -778,11 +1056,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
 
             if (res.ok && data.status === 'ok') {
-                // Show Recovery Key Modal
                 elements.recoveryKeyDisplay.textContent = data.recovery_key;
                 showModal('recovery-key-modal');
 
-                // Pre-fill login credentials for seamless continuation
                 $('login-username').value = username;
                 $('login-password').value = password;
 
@@ -792,7 +1068,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         showToast("Recovery key copied to clipboard!", "success");
                     } catch (e) {}
                     hideModal();
-                    // Automatically log in
                     elements.loginBtn.click();
                 };
             } else {
@@ -846,14 +1121,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Switch between forms
+    // Form Switchers
     elements.showRegister.addEventListener('click', () => {
         setAuthError('');
         elements.loginForm.classList.add('hidden');
         elements.recoverForm.classList.add('hidden');
         elements.registerForm.classList.remove('hidden');
         elements.authTitle.textContent = "Create an account";
-        elements.authSubtitle.textContent = "Begin your secure, encrypted journey";
+        elements.authSubtitle.textContent = "Begin your zero-knowledge encrypted journey";
     });
 
     elements.showLogin.addEventListener('click', () => {
@@ -883,7 +1158,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.authSubtitle.textContent = "We're so excited to see you again!";
     });
 
-    // Settings actions
+    // Settings
     elements.settingsBtn.addEventListener('click', () => showModal('settings-modal'));
 
     elements.logoutBtn.addEventListener('click', async () => {
@@ -900,7 +1175,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (res.ok) {
                 localStorage.clear();
                 showToast("Account deleted successfully", "info");
-                setTimeout(() => location.reload(), 1000);
+                setTimeout(() => location.reload(), 800);
             }
         } catch (e) {
             showToast("Failed to delete account", "error");
